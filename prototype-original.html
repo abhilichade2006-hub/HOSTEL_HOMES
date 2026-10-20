@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hostel Homes — Find your next home</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Hostel Homes home"><span class="brand-mark">H</span><span>Hostel<span class="brand-light">Homes</span></span></a>
+    <nav class="desktop-nav">
+      <a href="#explore">Explore stays</a>
+      <a href="#how">How it works</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="loginBtn">Log in</button>
+      <button class="btn btn-dark" id="listPropertyBtn">List your property <span>↗</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> YOUR NEXT CHAPTER STARTS HERE</div>
+        <h1>Find a place<br />to <em>feel at home.</em></h1>
+        <p>Thoughtfully listed hostels, flats and rooms for wherever life takes you next.</p>
+        <div class="search-panel">
+          <label class="search-field"><span class="field-icon">⌖</span><span><small>LOCATION</small><input id="locationInput" placeholder="City or locality" value="Pune" /></span></label>
+          <label class="search-field"><span class="field-icon">₹</span><span><small>MONTHLY BUDGET</small><select id="budgetSelect"><option value="all">Any budget</option><option value="5000">Under ₹5,000</option><option value="10000">Under ₹10,000</option><option value="15000">Under ₹15,000</option></select></span></label>
+          <button class="btn btn-orange search-btn" id="searchBtn">Find a stay <span>→</span></button>
+        </div>
+        <div class="hero-note"><span class="avatar-stack"><i>A</i><i>S</i><i>R</i></span><span><strong>Made for your next move</strong><br /><small>Browse demo listings to explore the experience</small></span></div>
+      </div>
+      <div class="hero-art">
+        <div class="sun"></div>
+        <div class="art-label"><span class="label-dot"></span> A space that feels like yours</div>
+        <div class="art-building">
+          <div class="building-roof"></div>
+          <div class="building-body">
+            <div class="window w1"></div><div class="window w2"></div><div class="window w3"></div>
+            <div class="window w4"></div><div class="window w5"></div><div class="window w6"></div>
+            <div class="door"></div>
+          </div>
+        </div>
+        <div class="plant plant-left"><span></span><span></span><span></span><b></b></div>
+        <div class="plant plant-right"><span></span><span></span><span></span><b></b></div>
+        <div class="floating-card"><div class="mini-icon">⌂</div><div><strong>Room to grow</strong><small>Find your kind of place</small></div><span class="card-arrow">↗</span></div>
+      </div>
+    </section>
+
+    <section class="trust-strip">
+      <div><strong>01</strong><span>Explore places</span></div>
+      <div><strong>02</strong><span>Compare your options</span></div>
+      <div><strong>03</strong><span>Connect with owners</span></div>
+      <p>Sample listings · Demo experience</p>
+    </section>
+
+    <section class="listing-section" id="explore">
+      <div class="section-heading">
+        <div><div class="eyebrow">A PLACE FOR EVERY PACE</div><h2>Find your <em>space.</em></h2><p>Explore stays that fit your lifestyle and budget.</p></div>
+        <div class="view-switch"><button class="active" id="gridViewBtn" aria-label="Grid view">▦</button><button id="listViewBtn" aria-label="List view">☰</button></div>
+      </div>
+      <div class="filter-row">
+        <div class="chips" id="typeFilters">
+          <button class="chip active" data-type="All">All stays <span>↗</span></button>
+          <button class="chip" data-type="Hostel">Hostels</button>
+          <button class="chip" data-type="Flat">Flats</button>
+          <button class="chip" data-type="Single Room">Single rooms</button>
+          <button class="chip" data-type="Shared Room">Shared rooms</button>
+        </div>
+        <label class="sort-control">Sort by <select id="sortSelect"><option value="featured">Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label>
+      </div>
+      <div class="results-line"><span id="resultsCount">6 places to explore</span><span class="demo-tag">DEMO DATA</span></div>
+      <div class="property-grid" id="propertyGrid"></div>
+      <div class="empty-state hidden" id="emptyState"><div class="empty-icon">⌂</div><h3>No places found just yet</h3><p>Try a different location or adjust your filters.</p><button class="btn btn-dark" id="resetFilters">Reset filters</button></div>
+    </section>
+
+    <section class="owner-cta" id="how">
+      <div class="cta-art"><div class="cta-circle"></div><div class="cta-house">⌂</div></div>
+      <div><div class="eyebrow">HAVE A SPACE TO SHARE?</div><h2>Your property could be<br />someone’s <em>next home.</em></h2><p>Submit your property for review and connect with people looking for a place to stay.</p><button class="btn btn-dark" id="ctaListBtn">List your property <span>→</span></button></div>
+    </section>
+  </main>
+
+  <footer><a class="brand" href="#"><span class="brand-mark">H</span><span>Hostel<span class="brand-light">Homes</span></span></a><p>Find a place. Make it yours.</p><small>Prototype demo · Listings shown are illustrative, not verified properties.</small></footer>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <dialog id="propertyDialog" class="modal"><button class="modal-close" data-close="propertyDialog">×</button><div id="propertyDetails"></div></dialog>
+  <dialog id="loginDialog" class="modal form-modal"><button class="modal-close" data-close="loginDialog">×</button><div class="modal-eyebrow">WELCOME TO HOSTEL HOMES</div><h2>Let’s get you <em>settled.</em></h2><p class="muted">Choose a demo role to explore the prototype. This is not real authentication.</p><form id="loginForm" class="stack-form"><label>Your name<input id="loginName" placeholder="e.g. Aditya" required /></label><label>Demo role<select id="loginRole"><option value="User">User</option><option value="Owner">Property Owner</option><option value="Admin">Admin (demo only)</option></select></label><button class="btn btn-dark full" type="submit">Continue to demo <span>→</span></button></form><div class="demo-warning">Demo only: roles are not securely authenticated. Do not use real personal information.</div></dialog>
+  <dialog id="listingDialog" class="modal form-modal"><button class="modal-close" data-close="listingDialog">×</button><div class="modal-eyebrow">SHARE YOUR SPACE</div><h2>List your <em>property.</em></h2><p class="muted">Your demo listing will be marked pending for admin review.</p><form id="listingForm" class="stack-form"><input type="hidden" id="pEditId" value="" />
+    <label>Property title<input id="pTitle" placeholder="e.g. Sunny shared room near campus" required /></label>
+    <div class="form-two"><label>Property type<select id="pType"><option>Hostel</option><option>Flat</option><option>Single Room</option><option>Shared Room</option></select></label><label>Monthly rent (₹)<input id="pRent" type="number" min="500" placeholder="6500" required /></label></div>
+    <div class="form-two"><label>City<input id="pCity" value="Pune" required /></label><label>Locality<input id="pLocality" placeholder="e.g. Wakad" required /></label></div>
+    <label>Facilities<input id="pFacilities" placeholder="Wi-Fi, laundry, furnished" /></label>
+    <label>Property photo (optional)<input id="pImage" type="file" accept="image/*" /></label><small class="muted">For this browser prototype, use an image up to 1 MB. Uploaded images stay in this browser only.</small>
+    <label>Owner contact number<input id="pPhone" type="tel" placeholder="Demo contact only" /></label>
+    <label>Short description<textarea id="pDescription" rows="3" placeholder="Tell people about the space"></textarea></label>
+    <button class="btn btn-dark full" type="submit">Submit for approval <span>→</span></button>
+  </form></dialog>
+  <dialog id="enquiryDialog" class="modal form-modal"><button class="modal-close" data-close="enquiryDialog">×</button><div id="enquiryContent"></div></dialog>
+  <dialog id="dashboardDialog" class="modal dashboard-modal"><button class="modal-close" data-close="dashboardDialog">×</button><div id="dashboardContent"></div></dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
