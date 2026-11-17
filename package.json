@@ -4,7 +4,7 @@
   "private": true,
   "description": "Hostel Homes full-stack accommodation marketplace prototype",
   "main": "server.js",
-  "scripts": {"start": "node server.js", "dev": "node --watch server.js"},
+  "scripts": {"start": "node server.js", "dev": "node --watch server.js", "test": "node --test tests/*.test.js"},
   "engines": {"node": ">=22.13.0"},
   "dependencies": {
     "bcryptjs": "^2.4.3",

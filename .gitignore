@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Local secrets (keep the shareable template)
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases and journal files
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Logs and temporary verification files
+*.log
+.backend-check/
+
+# OS files
+.DS_Store
+Thumbs.db

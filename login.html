@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#075985">
+  <title>Log in — Hostel Homes</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="auth-page">
+  <header class="auth-header"><a class="brand" href="/"><span class="mark">H</span>Hostel<span>Homes</span></a><a class="auth-back" href="/">← Back to stays</a></header>
+  <main class="auth-layout">
+    <section class="auth-intro"><div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div><h1>A place to stay.<br><em>A space to grow.</em></h1><p>Find a place that feels like home, or manage your property listings in one place.</p><div class="auth-highlight">✦ Your next chapter starts with a good place.</div></section>
+    <section class="auth-panel" aria-labelledby="authTitle">
+      <div class="eyebrow">WELCOME TO HOSTEL HOMES</div>
+      <h2 id="authTitle">Good to have you back.</h2>
+      <p class="muted" id="authDescription">Log in to save stays, send enquiries and manage listings.</p>
+      <div class="tabs"><button type="button" id="loginTab" class="active" aria-pressed="true">Log in</button><button type="button" id="registerTab" aria-pressed="false">Create account</button></div>
+      <form class="form" id="loginForm">
+        <div id="registerFields" hidden><label>Your name<input name="name" maxlength="80" autocomplete="name" placeholder="Full name"></label><label>Account type<select name="role"><option value="User">Looking for a stay</option><option value="Owner">Property owner</option></select></label></div>
+        <label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your password"></label>
+        <p class="auth-error" id="authError" role="alert" hidden></p>
+        <button class="btn dark auth-submit" type="submit" id="submitAuth">Log in →</button>
+      </form>
+    </section>
+  </main>
+  <script src="/login.js"></script>
+</body>
+</html>

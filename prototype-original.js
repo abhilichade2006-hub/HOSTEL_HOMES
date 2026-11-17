@@ -1,10 +1,10 @@
 const initialProperties = [
-  {id:"p1",title:"The Green Nest — Shared Stay",type:"Hostel",rent:6500,city:"Pune",locality:"Wakad",facilities:["Wi-Fi","Laundry","Meals"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"A bright, comfortable shared stay designed for students and young professionals. This is illustrative demo data, not a verified property.",color:0,deposit:5000,gender:"Any"},
-  {id:"p2",title:"Sunlit Studio Near Campus",type:"Single Room",rent:9200,city:"Pune",locality:"Kothrud",facilities:["Furnished","Wi-Fi","Study desk"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"A compact single room with a calm study-friendly setup. Sample listing only; confirm all details before making real-world decisions.",color:1,deposit:10000,gender:"Any"},
-  {id:"p3",title:"Courtyard Shared Flat",type:"Flat",rent:12000,city:"Pune",locality:"Baner",facilities:["Kitchen","Balcony","Furnished"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"A shared-flat style listing with a balcony and common kitchen. This is an example listing for the prototype.",color:2,deposit:15000,gender:"Any"},
-  {id:"p4",title:"Maple House — Student Hostel",type:"Hostel",rent:4800,city:"Pune",locality:"Viman Nagar",facilities:["Wi-Fi","Security","Meals"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"Budget-friendly sample hostel listing for exploring the search and filtering experience.",color:3,deposit:3000,gender:"Any"},
-  {id:"p5",title:"Quiet Corner Private Room",type:"Single Room",rent:14500,city:"Pune",locality:"Aundh",facilities:["Attached bath","Furnished","Wi-Fi"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"A private-room sample listing with everyday amenities. Verify availability and terms with the property owner in a real service.",color:4,deposit:20000,gender:"Any"},
-  {id:"p6",title:"The Shared House",type:"Shared Room",rent:5500,city:"Pune",locality:"Hinjawadi",facilities:["Wi-Fi","Laundry","Parking"],availability:"Available",status:"Approved",owner:"Demo Owner",phone:"",description:"A shared-room example near a work hub. Demo information only and not a verified accommodation offer.",color:5,deposit:5000,gender:"Any"}
+  {id:"p1",title:"The Green Nest — Shared Stay",type:"Hostel",rent:6500,city:"Pune",locality:"Wakad",facilities:["Wi-Fi","Laundry","Meals"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"A bright, comfortable shared stay designed for students and young professionals. Verify property details with the owner before paying or visiting.",color:0,deposit:5000,gender:"Any"},
+  {id:"p2",title:"Sunlit Studio Near Campus",type:"Single Room",rent:9200,city:"Pune",locality:"Kothrud",facilities:["Furnished","Wi-Fi","Study desk"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"A compact single room with a calm study-friendly setup. Confirm all details with the property owner before making a decision.",color:1,deposit:10000,gender:"Any"},
+  {id:"p3",title:"Courtyard Shared Flat",type:"Flat",rent:12000,city:"Pune",locality:"Baner",facilities:["Kitchen","Balcony","Furnished"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"A shared-flat style listing with a balcony and common kitchen. Verify property details with the owner before paying or visiting.",color:2,deposit:15000,gender:"Any"},
+  {id:"p4",title:"Maple House — Student Hostel",type:"Hostel",rent:4800,city:"Pune",locality:"Viman Nagar",facilities:["Wi-Fi","Security","Meals"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"Budget-friendly hostel listing. Verify details with the property owner before paying or visiting..",color:3,deposit:3000,gender:"Any"},
+  {id:"p5",title:"Quiet Corner Private Room",type:"Single Room",rent:14500,city:"Pune",locality:"Aundh",facilities:["Attached bath","Furnished","Wi-Fi"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"A private room with everyday amenities. Verify availability and terms with the property owner.",color:4,deposit:20000,gender:"Any"},
+  {id:"p6",title:"The Shared House",type:"Shared Room",rent:5500,city:"Pune",locality:"Hinjawadi",facilities:["Wi-Fi","Laundry","Parking"],availability:"Available",status:"Approved",owner:"Property Owner",phone:"",description:"A shared-room example near a work hub. Verify availability and details with the property owner before paying or visiting.",color:5,deposit:5000,gender:"Any"}
 ];
 
 const store = {
@@ -54,7 +54,7 @@ function renderProperties() {
     <article class="property-card">
       <div class="property-image" data-open="${esc(p.id)}">${propertyVisual(p)}<span class="image-tag">${esc(p.type.toUpperCase())}</span><button class="fav-btn ${favourites.includes(p.id)?"saved":""}" data-fav="${esc(p.id)}" aria-label="Toggle favourite">${favourites.includes(p.id)?"♥":"♡"}</button></div>
       <div class="property-content">
-        <div class="property-type-line"><span>${esc(p.type)} · Demo listing</span><span class="availability">${esc(p.availability)}</span></div>
+        <div class="property-type-line"><span>${esc(p.type)}</span><span class="availability">${esc(p.availability)}</span></div>
         <h3 data-open="${esc(p.id)}">${esc(p.title)}</h3>
         <div class="property-location">⌖ ${esc(p.locality)}, ${esc(p.city)}</div>
         <div class="property-bottom"><div class="price"><strong>${money(p.rent)}</strong> <small>/ month</small></div><button class="details-link" data-open="${esc(p.id)}">View details ↗</button></div>
@@ -71,22 +71,22 @@ function openProperty(id) {
   const p=propertyById(id); if(!p) return;
   const safePhone=(p.phone||"").replace(/[^\d+]/g,"");
   $("propertyDetails").innerHTML=`
-    <div class="modal-eyebrow">${esc(p.type.toUpperCase())} · DEMO LISTING</div>
+    <div class="modal-eyebrow">${esc(p.type.toUpperCase())} · </div>
     <div class="detail-hero">${propertyVisual(p)}</div>
     <div class="detail-head"><div><h2>${esc(p.title)}</h2><div class="detail-location">⌖ ${esc(p.locality)}, ${esc(p.city)}</div></div><div class="detail-price">${money(p.rent)}<small>per month</small></div></div>
-    <p class="detail-description">${esc(p.description||"Demo property listing.")}</p>
+    <p class="detail-description">${esc(p.description||"Property listing.")}</p>
     <div class="amenities">${(p.facilities||[]).map(x=>`<span>${esc(x)}</span>`).join("")}<span>Deposit: ${money(p.deposit||0)}</span><span>${esc(p.gender||"Any")} preference</span></div>
-    <div class="demo-warning">Illustrative sample listing. Property details, photos, rent, and availability have not been independently verified.</div>
+    <div class="account-warning">Confirm property details, photos, rent, and availability with the owner.</div>
     <div class="detail-actions"><button class="btn btn-dark" id="enquireBtn">Send booking enquiry →</button><button class="btn btn-ghost" id="detailFav">${favourites.includes(p.id)?"♥ Saved":"♡ Save"}</button></div>
     <div class="detail-actions"><button class="btn btn-ghost" id="callBtn">☎ Call owner</button><button class="btn btn-ghost" id="waBtn">WhatsApp ↗</button></div>`;
   openDialog("propertyDialog");
   $("enquireBtn").onclick=()=>{closeDialog("propertyDialog");openEnquiry(id);};
   $("detailFav").onclick=()=>toggleFavourite(id);
-  $("callBtn").onclick=()=>{if(!safePhone){toast("Demo listing has no real contact number.");return;}location.href="tel:"+safePhone;};
-  $("waBtn").onclick=()=>{if(!safePhone){toast("Demo listing has no real WhatsApp number.");return;}window.open("https://wa.me/"+safePhone.replace(/\D/g,"")+"?text="+encodeURIComponent("Hi, I'm interested in "+p.title+". Is it available?"),"_blank","noopener");};
+  $("callBtn").onclick=()=>{if(!safePhone){toast("No contact number is listed for this property.");return;}location.href="tel:"+safePhone;};
+  $("waBtn").onclick=()=>{if(!safePhone){toast("No WhatsApp contact number is listed.");return;}window.open("https://wa.me/"+safePhone.replace(/\D/g,"")+"?text="+encodeURIComponent("Hi, I'm interested in "+p.title+". Is it available?"),"_blank","noopener");};
 }
 function toggleFavourite(id) {
-  if(!currentUser){toast("Log in to save favourites (demo login).");openDialog("loginDialog");return;}
+  if(!currentUser){toast("Log in to save favourites .");openDialog("loginDialog");return;}
   if(favourites.includes(id)) favourites=favourites.filter(x=>x!==id); else favourites.push(id);
   store.write("favourites",favourites); renderProperties();
   if($("propertyDialog").open && propertyById(id)) openProperty(id);
@@ -95,13 +95,13 @@ function toggleFavourite(id) {
 function openEnquiry(id) {
   const p=propertyById(id); if(!p)return;
   if(!currentUser){toast("Log in first to submit an enquiry.");openDialog("loginDialog");return;}
-  $("enquiryContent").innerHTML=`<div class="modal-eyebrow">YOUR NEXT STEP</div><h2 class="dashboard-title">Enquire about this <em>stay.</em></h2><p class="muted">${esc(p.title)} · ${money(p.rent)}/month · ${esc(p.locality)}</p><form class="stack-form" id="enquiryForm"><label>Preferred move-in date<input type="date" id="moveDate" required /></label><label>Message to owner<textarea id="enquiryMessage" rows="4" required placeholder="Hi, I'd like to know more about this room..."></textarea></label><button class="btn btn-dark full" type="submit">Send enquiry →</button></form><div class="demo-warning">This prototype stores enquiries only in this browser. No real owner is notified.</div>`;
+  $("enquiryContent").innerHTML=`<div class="modal-eyebrow">YOUR NEXT STEP</div><h2 class="dashboard-title">Enquire about this <em>stay.</em></h2><p class="muted">${esc(p.title)} · ${money(p.rent)}/month · ${esc(p.locality)}</p><form class="stack-form" id="enquiryForm"><label>Preferred move-in date<input type="date" id="moveDate" required /></label><label>Message to owner<textarea id="enquiryMessage" rows="4" required placeholder="Hi, I'd like to know more about this room..."></textarea></label><button class="btn btn-dark full" type="submit">Send enquiry →</button></form><div class="account-warning">Enquiries are stored only in this browser. The property owner is not notified.</div>`;
   openDialog("enquiryDialog");
   $("moveDate").min=new Date().toISOString().slice(0,10);
   $("enquiryForm").onsubmit=e=>{
     e.preventDefault();
     enquiries.unshift({id:"e"+Date.now(),propertyId:id,propertyTitle:p.title,userName:currentUser.name,userRole:currentUser.role,date:$("moveDate").value,message:$("enquiryMessage").value,status:"Pending",ownerId:p.ownerId||null,createdAt:new Date().toISOString()});
-    store.write("enquiries",enquiries);closeDialog("enquiryDialog");toast("Demo enquiry submitted successfully.");};
+    store.write("enquiries",enquiries);closeDialog("enquiryDialog");toast("Enquiry saved successfully.");};
 }
 function updateHeader() {
   $("loginBtn").textContent=currentUser?currentUser.name.split(" ")[0]:"Log in";
@@ -110,12 +110,12 @@ function updateHeader() {
 function openListing() {
   if(!currentUser){toast("Log in as a Property Owner to submit a listing.");openDialog("loginDialog");return;}
   if(currentUser.role==="Admin"){openDashboard();return;}
-  if(currentUser.role!=="Owner"){toast("Switch to the Property Owner demo role to submit a listing.");openDialog("loginDialog");return;}
+  if(currentUser.role!=="Owner"){toast("Switch to the Property Owner account to submit a listing.");openDialog("loginDialog");return;}
   openDialog("listingDialog");
 }
 function openDashboard() {
   if(!currentUser){openDialog("loginDialog");return;}
-  if(currentUser.role==="User"){toast("Choose Owner or Admin demo role to open a dashboard.");openDialog("loginDialog");return;}
+  if(currentUser.role==="User"){toast("Choose Owner or Admin account to open a dashboard.");openDialog("loginDialog");return;}
   const admin=currentUser.role==="Admin";
   const owned=properties.filter(p=>admin||p.ownerId===currentUser.id);
   const pending=admin?properties.filter(p=>p.status==="Pending"):owned.filter(p=>p.status==="Pending");
@@ -123,12 +123,12 @@ function openDashboard() {
   $("dashboardContent").innerHTML=`
     <div class="modal-eyebrow">${admin?"ADMINISTRATION":"PROPERTY OWNER"}</div>
     <h2 class="dashboard-title">${admin?"Admin dashboard":"Your property dashboard"}</h2>
-    <p class="dashboard-sub">${admin?"Review demo listings and manage enquiries.":"Manage your submitted demo listings and enquiries."}</p>
+    <p class="dashboard-sub">${admin?"Review listings and manage enquiries.":"Manage your submitted listings and enquiries."}</p>
     <div class="stats-grid"><div class="stat-card"><small>${admin?"Total listings":"Your listings"}</small><strong>${owned.length}</strong></div><div class="stat-card"><small>Pending approval</small><strong>${pending.length}</strong></div><div class="stat-card"><small>Booking enquiries</small><strong>${ownEnquiries.length}</strong></div></div>
     ${admin?`<h3>Pending listing approvals</h3><div class="dashboard-list" id="approvalList">${pending.length?pending.map(p=>dashboardProperty(p,true)).join(""):'<div class="dashboard-empty">No pending listings.</div>'}</div>`:""}
     <h3 style="margin-top:22px">Property listings</h3><div class="dashboard-list">${owned.length?owned.map(p=>dashboardProperty(p,admin&&p.status==="Pending")).join(""):'<div class="dashboard-empty">No properties yet. Submit a listing to get started.</div>'}</div>
     <h3 style="margin-top:22px">Booking enquiries</h3><div class="dashboard-list">${ownEnquiries.length?ownEnquiries.map(e=>dashboardEnquiry(e,admin)).join(""):'<div class="dashboard-empty">No booking enquiries yet.</div>'}</div>
-    <div class="demo-warning">Prototype note: this dashboard and its role selection are for demonstration only. Browser-stored roles are not secure; do not use for real users or sensitive data.</div>`;
+    <div class="account-warning">This dashboard stores role information in the browser and does not securely authenticate users. Do not enter sensitive information.</div>`;
   openDialog("dashboardDialog");
   $("dashboardContent").querySelectorAll("[data-approve]").forEach(b=>b.onclick=()=>moderateProperty(b.dataset.approve,"Approved"));
   $("dashboardContent").querySelectorAll("[data-reject]").forEach(b=>b.onclick=()=>moderateProperty(b.dataset.reject,"Rejected"));
@@ -143,13 +143,13 @@ function dashboardEnquiry(e,admin) {
   return `<div class="dashboard-item"><div class="mini-icon">✉</div><div class="dashboard-item-info"><strong>${esc(e.propertyTitle)}</strong><small>From ${esc(e.userName)} · Move-in: ${esc(e.date||"Not specified")}</small><small>${esc(e.message)}</small><small>Status: <span class="status-pill ${esc(e.status)}">${esc(e.status)}</span></small></div><div class="item-actions">${(admin||currentUser.role==="Owner")&&e.status==="Pending"?`<button class="mini-btn approve" data-enquiry-status="${esc(e.id)}" data-status="Accepted">Accept</button><button class="mini-btn reject" data-enquiry-status="${esc(e.id)}" data-status="Rejected">Reject</button>`:""}</div></div>`;
 }
 function moderateProperty(id,status) {
-  if(!currentUser||currentUser.role!=="Admin"){toast("Only the demo Admin can moderate listings.");return;}
+  if(!currentUser||currentUser.role!=="Admin"){toast("Only an Admin can moderate listings.");return;}
   properties=properties.map(p=>p.id===id?{...p,status}:p);store.write("properties",properties);renderProperties();openDashboard();toast("Listing marked "+status.toLowerCase()+".");
 }
 function editProperty(id) {
   const p=propertyById(id);
   if(!p || !currentUser || currentUser.role!=="Owner" || p.ownerId!==currentUser.id) {
-    toast("You can only edit your own demo listings."); return;
+    toast("You can only edit your own listings."); return;
   }
   closeDialog("dashboardDialog");
   $("pEditId").value=p.id;
@@ -178,8 +178,8 @@ function resetListingForm() {
 function deleteProperty(id) {
   const p=propertyById(id);if(!p)return;
   if(currentUser.role!=="Admin"&&p.ownerId!==currentUser.id){toast("You cannot delete this listing.");return;}
-  if(!confirm("Delete this demo listing?"))return;
-  properties=properties.filter(x=>x.id!==id);store.write("properties",properties);renderProperties();openDashboard();toast("Demo listing deleted.");
+  if(!confirm("Delete this listing?"))return;
+  properties=properties.filter(x=>x.id!==id);store.write("properties",properties);renderProperties();openDashboard();toast("Listing deleted.");
 }
 function updateEnquiry(id,status) {
   enquiries=enquiries.map(e=>e.id===id?{...e,status}:e);store.write("enquiries",enquiries);openDashboard();toast("Enquiry status updated.");
@@ -199,13 +199,13 @@ $("loginBtn").onclick=()=>{if(currentUser){if(currentUser.role==="Owner"||curren
 $("loginForm").onsubmit=e=>{
   e.preventDefault();const name=$("loginName").value.trim();const role=$("loginRole").value;
   if(!name)return;
-  currentUser={id:"demo-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-"),name,role};store.write("session",currentUser);closeDialog("loginDialog");updateHeader();toast(`Demo mode: signed in as ${role}.`);
-  if(role==="Owner"||role==="Admin")openDashboard();else toast("Welcome! Browse stays and send a demo enquiry.");
+  currentUser={id:"account-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-"),name,role};store.write("session",currentUser);closeDialog("loginDialog");updateHeader();toast(`Signed in as ${role}.`);
+  if(role==="Owner"||role==="Admin")openDashboard();else toast("Welcome! Browse stays and send a enquiry.");
 };
 $("listPropertyBtn").onclick=openListing;$("ctaListBtn").onclick=openListing;
 $("listingForm").onsubmit=async e=>{
   e.preventDefault();
-  if(!currentUser||currentUser.role!=="Owner"){toast("Please choose Property Owner demo role.");return;}
+  if(!currentUser||currentUser.role!=="Owner"){toast("Please choose Property Owner account.");return;}
   const editId=$("pEditId").value;
   const existing=editId?propertyById(editId):null;
   if(editId && (!existing || existing.ownerId!==currentUser.id)){toast("You can only edit your own listing.");return;}
@@ -236,7 +236,7 @@ $("listingForm").onsubmit=async e=>{
     owner:currentUser.name,
     ownerId:currentUser.id,
     phone:$("pPhone").value.trim(),
-    description:$("pDescription").value.trim()||"Owner-submitted demo listing awaiting review.",
+    description:$("pDescription").value.trim()||"Owner listing awaiting review.",
     imageData,
     color:existing?.color ?? properties.length%6,
     deposit:existing?.deposit||0,
@@ -253,8 +253,8 @@ $("listingForm").onsubmit=async e=>{
 };
 function openUserPanel(){
   const mine=enquiries.filter(e=>e.userName===currentUser.name);
-  $("dashboardContent").innerHTML=`<div class="modal-eyebrow">YOUR ACCOUNT</div><h2 class="dashboard-title">Hello, ${esc(currentUser.name)}.</h2><p class="dashboard-sub">Your demo favourites and booking enquiries.</p><h3>Saved favourites</h3><div class="dashboard-list">${favourites.length?favourites.map(id=>propertyById(id)).filter(Boolean).map(p=>dashboardProperty(p,false)).join(""):'<div class="dashboard-empty">No saved favourites yet. Tap the heart on a property card.</div>'}</div><h3 style="margin-top:22px">Your booking enquiries</h3><div class="dashboard-list">${mine.length?mine.map(e=>dashboardEnquiry(e,false)).join(""):'<div class="dashboard-empty">You have not sent any enquiries yet.</div>'}</div><button class="btn btn-ghost full" id="logoutBtn">Log out of demo</button><div class="demo-warning">This is a browser-only prototype. Account data is not securely authenticated or synced between devices.</div>`;
-  openDialog("dashboardDialog");$("logoutBtn").onclick=()=>{currentUser=null;store.write("session",null);closeDialog("dashboardDialog");updateHeader();toast("Logged out of demo.");};
+  $("dashboardContent").innerHTML=`<div class="modal-eyebrow">YOUR ACCOUNT</div><h2 class="dashboard-title">Hello, ${esc(currentUser.name)}.</h2><p class="dashboard-sub">Your favourites and booking enquiries.</p><h3>Saved favourites</h3><div class="dashboard-list">${favourites.length?favourites.map(id=>propertyById(id)).filter(Boolean).map(p=>dashboardProperty(p,false)).join(""):'<div class="dashboard-empty">No saved favourites yet. Tap the heart on a property card.</div>'}</div><h3 style="margin-top:22px">Your booking enquiries</h3><div class="dashboard-list">${mine.length?mine.map(e=>dashboardEnquiry(e,false)).join(""):'<div class="dashboard-empty">You have not sent any enquiries yet.</div>'}</div><button class="btn btn-ghost full" id="logoutBtn">Log out</button><div class="account-warning">Account data is stored only in this browser. It is not securely authenticated or synced between devices.</div>`;
+  openDialog("dashboardDialog");$("logoutBtn").onclick=()=>{currentUser=null;store.write("session",null);closeDialog("dashboardDialog");updateHeader();toast("Logged out.");};
 }
 updateHeader();renderProperties();
 
