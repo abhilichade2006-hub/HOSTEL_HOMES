@@ -58,7 +58,15 @@ test('account, listing, approval and enquiry flows', async () => {
     const listing = { title: 'Room', type: 'Hostel', rent: 5000, city: 'Pune', locality: 'Wakad', description: 'A room', phone: '+91 90000 00000' };
     assert.equal((await request('/api/admin/owners', 'GET', undefined, user.body.token)).status, 403);
     assert.equal((await request('/api/admin/owners', 'GET', undefined, admin.body.token)).body.owners.some(o => o.id === owner.body.user.id), true);
-    assert.equal((await request('/api/properties', 'POST', listing, admin.body.token)).status, 400);
+    const ownListing = await request('/api/properties', 'POST', listing, admin.body.token);
+    assert.equal(ownListing.status, 201);
+    assert.equal((await request(`/api/properties/${ownListing.body.id}`)).body.property.owner_id, admin.body.user.id);
+    assert.equal((await request(`/api/properties/${ownListing.body.id}`, 'PATCH', { owner_id: admin.body.user.id }, admin.body.token)).status, 200);
+    assert.deepEqual((await request(`/api/properties/${ownListing.body.id}/contact`, 'GET', undefined, user.body.token)).body.owner, { name: 'Hostel Homes Admin', email: 'admin@test.local', phone: '+91 90000 00000' });
+    const ownEnquiry = await request('/api/enquiries', 'POST', { property_id: ownListing.body.id, move_date: '2027-01-01', message: 'Message for the admin as property owner' }, user.body.token);
+    assert.equal(ownEnquiry.status, 201);
+    assert.equal((await request(`/api/enquiries/${ownEnquiry.body.id}`, 'PATCH', { status: 'Contacted' }, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/enquiries/${ownEnquiry.body.id}`, 'PATCH', { status: 'Closed' }, owner.body.token)).status, 403);
     assert.equal((await request('/api/properties', 'POST', { ...listing, owner_id: user.body.user.id }, admin.body.token)).status, 400);
     const adminListing = await request('/api/properties', 'POST', { ...listing, owner_id: owner.body.user.id, gender: 'Women', facilities: ['Wi-Fi','Laundry'], image_labels: ['Bedroom'], image_url: 'data:image/png;base64,aGVsbG8=', availability: 'Available' }, admin.body.token);
     assert.equal(adminListing.status, 201);
@@ -70,18 +78,15 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal(directEnquiry.status, 201);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].id, directEnquiry.body.id);
     assert.equal((await request('/api/enquiries', 'GET', undefined, otherOwner.body.token)).body.enquiries.length, 0);
-    assert.equal((await request('/api/enquiries', 'GET', undefined, admin.body.token)).status, 403);
+    assert.deepEqual((await request('/api/enquiries', 'GET', undefined, admin.body.token)).body.enquiries.map(e => e.id), [ownEnquiry.body.id]);
     assert.equal((await request(`/api/enquiries/${directEnquiry.body.id}`, 'PATCH', { status: 'Closed' }, admin.body.token)).status, 403);
     assert.equal((await request(`/api/enquiries/${directEnquiry.body.id}`, 'PATCH', { status: 'Closed' }, otherOwner.body.token)).status, 403);
     assert.equal((await request(`/api/enquiries/${directEnquiry.body.id}`, 'PATCH', { status: 'Closed' }, user.body.token)).status, 403);
     assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { owner_id: otherOwner.body.user.id }, owner.body.token)).status, 400);
-    // Existing admin-owned demo listings must be assigned before accepting enquiries.
-    const legacyDb = new DatabaseSync(path.join(dir, 'hostel-homes.sqlite'));
-    legacyDb.prepare('UPDATE properties SET owner_id=? WHERE id=?').run(admin.body.user.id, adminListing.body.id);
-    legacyDb.close();
-    assert.equal((await request(`/api/properties/${adminListing.body.id}/contact`, 'GET', undefined, user.body.token)).status, 409);
-    assert.equal((await request('/api/enquiries', 'POST', { property_id: adminListing.body.id, move_date: '2027-01-01', message: 'Unassigned room' }, user.body.token)).status, 409);
-    assert.equal((await request(`/api/admin/properties/${adminListing.body.id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 400);
+    // Transferring a listing changes its inbox recipient without exposing other owners' enquiries.
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { owner_id: admin.body.user.id }, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}/contact`, 'GET', undefined, user.body.token)).body.owner.email, 'admin@test.local');
+    assert.equal((await request('/api/enquiries', 'GET', undefined, admin.body.token)).body.enquiries.some(e => e.id === directEnquiry.body.id), true);
     assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { owner_id: otherOwner.body.user.id }, admin.body.token)).status, 200);
     assert.equal((await request('/api/enquiries', 'GET', undefined, otherOwner.body.token)).body.enquiries[0].id, directEnquiry.body.id);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries.length, 0);
@@ -116,9 +121,32 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal(created.status, 201);
     const id = created.body.id;
     assert.equal((await request(`/api/properties/${id}`)).status, 404);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, user.body.token)).status, 404);
     assert.equal((await request(`/api/properties/${id}`, 'PATCH', { rent: -1 }, owner.body.token)).status, 400);
     assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 0);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, null);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).body.rating, null);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 })).status, 401);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, owner.body.token)).status, 403);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, admin.body.token)).status, 403);
+    for (const stars of [0, 6, 2.5, '5', null, true]) {
+      assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars }, user.body.token)).status, 400);
+    }
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 2 }, user.body.token)).body.rating_count, 1);
+    const secondStudent = await request('/api/auth/register', 'POST', { name: 'Second student', email: 'second@test.local', password: 'password123' });
+    assert.equal(secondStudent.status, 201);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, secondStudent.body.token)).body.rating_average, 3.5);
+    const updatedRating = await request(`/api/properties/${id}/rating`, 'PUT', { stars: 4 }, user.body.token);
+    assert.equal(updatedRating.status, 200);
+    assert.equal(updatedRating.body.rating_average, 4.5);
+    assert.equal(updatedRating.body.rating_count, 2);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).body.rating, 4);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, secondStudent.body.token)).body.rating, 5);
+    assert.equal((await request('/api/properties')).body.properties.find(p => p.id === id).rating_average, 4.5);
+    assert.equal((await request('/api/owner/properties', 'GET', undefined, owner.body.token)).body.properties.find(p => p.id === id).rating_count, 2);
     assert.equal((await request(`/api/favourites/${id}`, 'POST', {}, user.body.token)).body.saved, true);
+    assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties[0].rating_average, 4.5);
     assert.equal((await request('/api/enquiries', 'POST', {}, user.body.token)).status, 400);
     assert.equal((await request('/api/enquiries', 'POST', { property_id: id, move_date: '2027-01-01', message: 'Hello' }, user.body.token)).status, 201);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].user_email, 'user@test.local');
@@ -135,10 +163,16 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request('/api/auth/me', 'GET', undefined, admin.body.token)).body.user.role, 'Admin');
     assert.deepEqual((await request(`/api/properties/${adminListing.body.id}`)).body.property, beforeRestart);
     assert.equal((await request(`/api/properties/${id}`)).body.property.title, 'Updated room');
+    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, 4.5);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 2);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, loggedInAgain.body.token)).body.rating, 4);
     assert.equal((await request('/api/favourites', 'GET', undefined, loggedInAgain.body.token)).body.properties[0].id, id);
     assert.equal((await request('/api/enquiries', 'GET', undefined, loggedInAgain.body.token)).body.enquiries[0].status, 'Contacted');
     const all = (await request('/api/admin/properties', 'GET', undefined, admin.body.token)).body.properties;
     for (const property of all) assert.equal((await request(`/api/properties/${property.id}`, 'DELETE', undefined, admin.body.token)).status, 200);
+    const database = new DatabaseSync(path.join(dir, 'hostel-homes.sqlite'), { readOnly: true });
+    assert.equal(database.prepare('SELECT COUNT(*) n FROM ratings').get().n, 0);
+    database.close();
     await stop(); await start();
     assert.equal((await request('/api/properties')).body.properties.length, 0);
   } finally {

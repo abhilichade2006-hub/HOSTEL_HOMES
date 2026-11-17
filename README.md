@@ -31,8 +31,9 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Role permissions enforced by backend: User, Owner, Admin. Public registration cannot create an Admin.
 - Search/filter/sort approved property listings.
 - Owners create and edit listings, view enquiries and delete their own listings; owner edits return listings to Pending approval.
-- Admins assign listings to registered owners, review and publish/reject listings, manage availability and see overview counts. Admins do not receive or manage student enquiries.
+- Admins list their own properties or assign listings to registered owners, review and publish/reject listings, manage availability and see overview counts. Admins receive and manage enquiries only for properties they own.
 - Room galleries support up to six uploaded photos or image URLs, with optional photo labels.
+- Signed-in User accounts can rate approved rooms from 1 to 5 stars and update their rating. Cards and details show the average and rating count. Owner and Admin accounts cannot rate rooms; ratings do not verify a stay.
 - Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
 - Data stored in SQLite database file, shared by app sessions on this computer.
 - Responsive browser UI.
@@ -56,4 +57,4 @@ Run `npm test`. The integration test starts a separate server with a temporary S
 
 Use `http://localhost:3000` for the site and `http://localhost:3000/login` for login. Both pages call the same server's `/api` routes, so no separate frontend server or API URL is needed. The health check is `http://localhost:3000/api/health`.
 
-Existing listings attached to an Admin account must be assigned to a registered Property owner through Admin → Edit before students can contact the owner or send an enquiry. Reassigning the listing also moves its existing enquiries to the selected owner’s dashboard.
+In Admin → Add property, My property is selected by default. Select a registered Property owner instead when posting on someone else's behalf. Students contact the selected owner, and only that owner can read or update the enquiry. Existing admin-owned listings use that admin’s contact details and personal property inbox.
