@@ -35,13 +35,17 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Room galleries support up to six uploaded photos or image URLs, with optional photo labels.
 - Signed-in User accounts can rate approved rooms from 1 to 5 stars and update their rating. Cards and details show the average and rating count. Owner and Admin accounts cannot rate rooms; ratings do not verify a stay.
 - Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
+- Owners and admins can optionally pin a property's location on an OpenStreetMap map. Saved pins appear in room details; unpinned rooms link to the locality instead. No map API key is required.
+- Private in-app alerts: admins receive listing review requests, owners receive enquiries and listing decisions, and students receive enquiry status updates. The Alerts button shows unread updates and supports marking them as read.
+- Optional transactional email alerts through Brevo's HTTPS API, with a local SQLite outbox and retries.
 - Data stored in SQLite database file, shared by app sessions on this computer.
 - Responsive browser UI.
 
 ## Important notes
 
-- This is a locally runnable full-stack prototype, **not deployed to the public internet**. To share it online, deploy the server and persistent database to a hosting provider and set production secrets/HTTPS.
-- No payments, identity verification, email/SMS notifications or map/radius search are included. Photo uploads are stored with listing data in SQLite.
+- The deployed site is https://hostel-homes.onrender.com/. Local changes reach it only after pushing to the branch Render deploys and deploying that commit.
+- No payments, identity verification, SMS notifications or radius search are included. Photo uploads, map pins and notifications are stored in SQLite.
+- Render Free loses local SQLite files on restarts, redeploys and idle shutdowns. A persistent database or a paid service with a persistent disk covering the database location is required to retain app data online. See [Render's storage limits](https://render.com/docs/free#local-files-lost-on-redeploy).
 - Keep `.env` private. Do not publish the admin password or JWT secret.
 - If the database is first created before changing `.env`, the admin account is only auto-created if absent. If you need to reset local data, stop the server and back up/delete `hostel-homes.sqlite` (this deletes local app data).
 - SQLite is suitable for a small deployment. For a public multi-user production deployment, use a managed database, HTTPS, backups, rate limiting, and a proper hosting setup.
@@ -53,8 +57,30 @@ This package uses Node.js built-in `node:sqlite` instead of `better-sqlite3`, so
 
 ## Verify the local backend
 
-Run `npm test`. The integration test starts a separate server with a temporary SQLite database, checks authentication, permissions, room publishing, photos, filters, favourites and enquiry updates, then restarts the server to verify persistence. It does not modify your normal database.
+Run `npm test`. The integration test starts a separate server with a temporary SQLite database and checks authentication, permissions, room publishing, photos, ratings, map coordinates, favourites, enquiries and private notifications, then restarts the server to verify persistence. Map picker and email queue tests run separately; email API responses are mocked. Tests do not modify your normal database or send real emails.
 
 Use `http://localhost:3000` for the site and `http://localhost:3000/login` for login. Both pages call the same server's `/api` routes, so no separate frontend server or API URL is needed. The health check is `http://localhost:3000/api/health`.
 
 In Admin → Add property, My property is selected by default. Select a registered Property owner instead when posting on someone else's behalf. Students contact the selected owner, and only that owner can read or update the enquiry. Existing admin-owned listings use that admin’s contact details and personal property inbox.
+
+## Set up email alerts
+
+Use [Brevo transactional email](https://developers.brevo.com/docs/send-a-transactional-email) for account-specific notifications. FormSubmit forwards submitted forms to a configured email address; Brevo lets this backend deliver each update to the relevant owner or student. The integration uses HTTPS because [Render Free blocks common SMTP ports](https://render.com/docs/free#other-limitations).
+
+1. Create a Brevo account, complete any required account activation, and add and verify a sender email address. Authenticate your own sending domain if you have one.
+2. Generate a Brevo **API key** (not an SMTP password).
+3. Add these values to `.env` locally, or to your Render service's **Environment** settings online:
+
+   ```dotenv
+   BREVO_API_KEY=your-brevo-api-key
+   EMAIL_FROM=your-verified-sender@example.com
+   APP_URL=https://hostel-homes.onrender.com
+   ```
+
+4. Restart locally or deploy on Render. Submit an owner listing, publish it as admin, send a student enquiry, then change its status as owner to check the relevant account's Alerts panel and email inbox. Check Brevo's transactional logs if email is missing.
+
+Leave `BREVO_API_KEY` and `EMAIL_FROM` empty for in-app alerts only. Never commit real keys or share them in chat. `APP_URL` is the public website URL used in emails; use `http://localhost:3000` for local-only links.
+
+The outbox processes up to 10 queued alerts every 30 seconds while the server is running. Failed sends retry after five minutes, stopping after three attempts; they remain available in-app. Configuring email later will also send previously queued alerts. Provider acceptance is recorded, but final inbox delivery depends on Brevo, its sending limits and recipient mail servers. A sleeping Render service pauses the email worker.
+
+Maps load [OpenStreetMap's standard tiles](https://operations.osmfoundation.org/policies/tiles/) when opened. Attribution stays visible. For substantial traffic, use a suitable commercial tile service or your own tile hosting.

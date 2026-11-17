@@ -17,12 +17,12 @@ async function freePort() {
 
 test('account, listing, approval and enquiry flows', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostel-homes-test-'));
-  for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
+  for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   let child;
   async function start() {
-    child = spawn(process.execPath, [path.join(dir, 'server.js')], { env: { ...process.env, NODE_PATH: path.join(__dirname, '..', 'node_modules'), PORT: String(port), ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'password123', JWT_SECRET: 'test-secret' }, stdio: 'ignore' });
+    child = spawn(process.execPath, [path.join(dir, 'server.js')], { env: { ...process.env, NODE_PATH: path.join(__dirname, '..', 'node_modules'), PORT: String(port), ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'password123', JWT_SECRET: 'test-secret', BREVO_API_KEY: '', EMAIL_FROM: '' }, stdio: 'ignore' });
     for (let i = 0; i < 100; i++) {
       if (child.exitCode !== null) throw Error(`Server exited: ${child.exitCode}`);
       try { if ((await fetch(base + '/api/health')).ok) return; } catch {}
@@ -39,6 +39,10 @@ test('account, listing, approval and enquiry flows', async () => {
     await start();
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     assert.equal((await fetch(base + '/app.js')).status, 200);
+    assert.equal((await fetch(base + '/maps.js')).status, 200);
+    assert.equal((await fetch(base + '/vendor/leaflet/leaflet.js')).status, 200);
+    assert.equal((await fetch(base + '/vendor/leaflet/images/marker-icon.png')).status, 200);
+    assert.equal((await fetch(base + '/')).headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
     assert.match(await (await fetch(base + '/login')).text(), /id="loginForm"/);
     assert.equal((await fetch(base + '/login.js')).status, 200);
     assert.doesNotMatch(await (await fetch(base + '/.env')).text(), /JWT_SECRET/);
@@ -46,6 +50,8 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal(malformed.status, 400);
     assert.equal((await malformed.json()).error, 'Invalid JSON request.');
     assert.equal((await request('/api/owner/properties')).status, 401);
+    assert.equal((await request('/api/notifications')).status, 401);
+    assert.equal((await request('/api/notifications/read', 'PATCH')).status, 401);
     assert.equal((await request('/api/auth/me', 'GET', undefined, 'invalid-token')).status, 401);
     const owner = await request('/api/auth/register', 'POST', { name: 'Owner', email: 'owner@test.local', password: 'password123', role: 'Owner' });
     assert.equal(owner.status, 201);
@@ -55,27 +61,54 @@ test('account, listing, approval and enquiry flows', async () => {
     const user = await request('/api/auth/register', 'POST', { name: 'User', email: 'user@test.local', password: 'password123' });
     const admin = await request('/api/auth/login', 'POST', { email: 'admin@test.local', password: 'password123' });
     assert.equal(user.status, 201); assert.equal(admin.status, 200);
+    const alerts = async account => (await request('/api/notifications', 'GET', undefined, account.body.token)).body;
+    assert.equal((await alerts(admin)).unread_count, 0);
     const listing = { title: 'Room', type: 'Hostel', rent: 5000, city: 'Pune', locality: 'Wakad', description: 'A room', phone: '+91 90000 00000' };
     assert.equal((await request('/api/admin/owners', 'GET', undefined, user.body.token)).status, 403);
     assert.equal((await request('/api/admin/owners', 'GET', undefined, admin.body.token)).body.owners.some(o => o.id === owner.body.user.id), true);
     const ownListing = await request('/api/properties', 'POST', listing, admin.body.token);
     assert.equal(ownListing.status, 201);
     assert.equal((await request(`/api/properties/${ownListing.body.id}`)).body.property.owner_id, admin.body.user.id);
+    assert.equal((await request(`/api/properties/${ownListing.body.id}`)).body.property.latitude, null);
     assert.equal((await request(`/api/properties/${ownListing.body.id}`, 'PATCH', { owner_id: admin.body.user.id }, admin.body.token)).status, 200);
     assert.deepEqual((await request(`/api/properties/${ownListing.body.id}/contact`, 'GET', undefined, user.body.token)).body.owner, { name: 'Hostel Homes Admin', email: 'admin@test.local', phone: '+91 90000 00000' });
     const ownEnquiry = await request('/api/enquiries', 'POST', { property_id: ownListing.body.id, move_date: '2027-01-01', message: 'Message for the admin as property owner' }, user.body.token);
     assert.equal(ownEnquiry.status, 201);
+    assert.equal((await alerts(admin)).notifications[0].kind, 'enquiry');
+    assert.equal((await alerts(owner)).unread_count, 0);
     assert.equal((await request(`/api/enquiries/${ownEnquiry.body.id}`, 'PATCH', { status: 'Contacted' }, admin.body.token)).status, 200);
+    assert.equal((await alerts(user)).notifications[0].kind, 'enquiry_status');
     assert.equal((await request(`/api/enquiries/${ownEnquiry.body.id}`, 'PATCH', { status: 'Closed' }, owner.body.token)).status, 403);
     assert.equal((await request('/api/properties', 'POST', { ...listing, owner_id: user.body.user.id }, admin.body.token)).status, 400);
-    const adminListing = await request('/api/properties', 'POST', { ...listing, owner_id: owner.body.user.id, gender: 'Women', facilities: ['Wi-Fi','Laundry'], image_labels: ['Bedroom'], image_url: 'data:image/png;base64,aGVsbG8=', availability: 'Available' }, admin.body.token);
+    for (const coordinates of [{ latitude: 91, longitude: 0 }, { latitude: 0, longitude: -181 }, { latitude: '18', longitude: 73 }, { latitude: 18 }, { latitude: true, longitude: 73 }]) {
+      assert.equal((await request('/api/properties', 'POST', { ...listing, ...coordinates }, owner.body.token)).status, 400);
+    }
+    assert.equal((await alerts(admin)).unread_count, 1);
+    const adminListing = await request('/api/properties', 'POST', { ...listing, owner_id: owner.body.user.id, gender: 'Women', facilities: ['Wi-Fi','Laundry'], image_labels: ['Bedroom'], image_url: 'data:image/png;base64,aGVsbG8=', availability: 'Available', latitude: 18.5204, longitude: 73.8567 }, admin.body.token);
     assert.equal(adminListing.status, 201);
+    assert.equal((await alerts(owner)).notifications[0].kind, 'listing_status');
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`)).body.property.latitude, 18.5204);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { latitude: null }, admin.body.token)).status, 400);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { latitude: 18.6, longitude: 73.8 }, otherOwner.body.token)).status, 403);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { latitude: null, longitude: null }, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`)).body.property.longitude, null);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { latitude: 18.5204, longitude: 73.8567 }, admin.body.token)).status, 200);
     assert.equal((await request(`/api/properties/${adminListing.body.id}`)).body.property.owner_id, owner.body.user.id);
     assert.equal((await request(`/api/properties/${adminListing.body.id}/contact`)).status, 401);
     assert.equal((await request(`/api/properties/${adminListing.body.id}/contact`, 'GET', undefined, admin.body.token)).status, 403);
     assert.deepEqual((await request(`/api/properties/${adminListing.body.id}/contact`, 'GET', undefined, user.body.token)).body.owner, { name: 'Owner', email: 'owner@test.local', phone: '+91 90000 00000' });
     const directEnquiry = await request('/api/enquiries', 'POST', { property_id: adminListing.body.id, move_date: '2027-01-01', message: 'Message for the real owner' }, user.body.token);
     assert.equal(directEnquiry.status, 201);
+    const ownerAlert = (await alerts(owner)).notifications[0];
+    assert.equal(ownerAlert.kind, 'enquiry');
+    assert.equal(ownerAlert.property_id, adminListing.body.id);
+    assert.equal('email_key' in ownerAlert, false);
+    assert.equal((await alerts(otherOwner)).unread_count, 0);
+    assert.equal((await alerts(admin)).unread_count, 1);
+    assert.equal((await request(`/api/notifications/${ownerAlert.id}/read`, 'PATCH', {}, otherOwner.body.token)).status, 404);
+    assert.equal((await alerts(owner)).unread_count, 2);
+    assert.equal((await request(`/api/notifications/${ownerAlert.id}/read`, 'PATCH', {}, owner.body.token)).status, 200);
+    assert.equal((await alerts(owner)).unread_count, 1);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].id, directEnquiry.body.id);
     assert.equal((await request('/api/enquiries', 'GET', undefined, otherOwner.body.token)).body.enquiries.length, 0);
     assert.deepEqual((await request('/api/enquiries', 'GET', undefined, admin.body.token)).body.enquiries.map(e => e.id), [ownEnquiry.body.id]);
@@ -120,10 +153,24 @@ test('account, listing, approval and enquiry flows', async () => {
     const created = await request('/api/properties', 'POST', listing, owner.body.token);
     assert.equal(created.status, 201);
     const id = created.body.id;
+    assert.equal((await alerts(admin)).notifications[0].kind, 'listing_review');
+    assert.equal((await alerts(admin)).notifications[0].property_id, id);
     assert.equal((await request(`/api/properties/${id}`)).status, 404);
     assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, user.body.token)).status, 404);
     assert.equal((await request(`/api/properties/${id}`, 'PATCH', { rent: -1 }, owner.body.token)).status, 400);
     assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
+    const approvedAlert = (await alerts(owner)).notifications[0];
+    assert.equal(approvedAlert.kind, 'listing_status');
+    assert.match(approvedAlert.message, /approved/);
+    assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
+    assert.equal((await alerts(owner)).notifications[0].id, approvedAlert.id);
+    assert.equal((await request(`/api/properties/${id}`, 'PATCH', { latitude: 0, longitude: 0 }, owner.body.token)).status, 200);
+    assert.equal((await alerts(admin)).notifications[0].kind, 'listing_review');
+    assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Rejected' }, admin.body.token)).status, 200);
+    assert.match((await alerts(owner)).notifications[0].message, /rejected/);
+    assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.latitude, 0);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.longitude, 0);
     assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 0);
     assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, null);
     assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).body.rating, null);
@@ -152,16 +199,27 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].user_email, 'user@test.local');
     const enquiry = (await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0];
     assert.equal((await request(`/api/enquiries/${enquiry.id}`, 'PATCH', { status: 'Contacted' }, owner.body.token)).status, 200);
+    const contactedAlert = (await alerts(user)).notifications[0];
+    assert.equal(contactedAlert.kind, 'enquiry_status');
+    assert.match(contactedAlert.message, /contacted/);
+    assert.equal((await request(`/api/enquiries/${enquiry.id}`, 'PATCH', { status: 'Contacted' }, owner.body.token)).status, 200);
+    assert.equal((await alerts(user)).notifications[0].id, contactedAlert.id);
     assert.equal((await request(`/api/properties/${id}`, 'PATCH', { title: 'Updated room' }, owner.body.token)).status, 200);
     assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties.length, 0);
     assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
     const beforeRestart = (await request(`/api/properties/${adminListing.body.id}`)).body.property;
+    assert.equal((await request('/api/notifications/read', 'PATCH', {}, owner.body.token)).status, 200);
+    assert.equal((await alerts(owner)).unread_count, 0);
+    assert.ok((await alerts(user)).unread_count > 0);
+    const alertsBeforeRestart = await alerts(owner);
     await stop(); await start();
     const loggedInAgain = await request('/api/auth/login', 'POST', { email: 'user@test.local', password: 'password123' });
     assert.equal(loggedInAgain.status, 200);
     assert.equal(loggedInAgain.body.user.id, user.body.user.id);
     assert.equal((await request('/api/auth/me', 'GET', undefined, admin.body.token)).body.user.role, 'Admin');
     assert.deepEqual((await request(`/api/properties/${adminListing.body.id}`)).body.property, beforeRestart);
+    assert.deepEqual(await alerts(owner), alertsBeforeRestart);
+    assert.equal((await request(`/api/properties/${id}`)).body.property.longitude, 0);
     assert.equal((await request(`/api/properties/${id}`)).body.property.title, 'Updated room');
     assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, 4.5);
     assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 2);
@@ -175,6 +233,8 @@ test('account, listing, approval and enquiry flows', async () => {
     database.close();
     await stop(); await start();
     assert.equal((await request('/api/properties')).body.properties.length, 0);
+    assert.ok((await alerts(owner)).notifications.length > 0);
+    assert.ok((await alerts(owner)).notifications.every(n => n.property_id === null));
   } finally {
     await stop();
     fs.rmSync(dir, { recursive: true, force: true });
