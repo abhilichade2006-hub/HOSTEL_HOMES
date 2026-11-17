@@ -31,9 +31,9 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Role permissions enforced by backend: User, Owner, Admin. Public registration cannot create an Admin.
 - Search/filter/sort approved property listings.
 - Owners create and edit listings, view enquiries and delete their own listings; owner edits return listings to Pending approval.
-- Admins create and publish listings, approve/reject listings, manage availability, see overview counts and update enquiry status.
+- Admins assign listings to registered owners, review and publish/reject listings, manage availability and see overview counts. Admins do not receive or manage student enquiries.
 - Room galleries support up to six uploaded photos or image URLs, with optional photo labels.
-- Users save/unsave favourites and send booking enquiries.
+- Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
 - Data stored in SQLite database file, shared by app sessions on this computer.
 - Responsive browser UI.
 
@@ -55,3 +55,5 @@ This package uses Node.js built-in `node:sqlite` instead of `better-sqlite3`, so
 Run `npm test`. The integration test starts a separate server with a temporary SQLite database, checks authentication, permissions, room publishing, photos, filters, favourites and enquiry updates, then restarts the server to verify persistence. It does not modify your normal database.
 
 Use `http://localhost:3000` for the site and `http://localhost:3000/login` for login. Both pages call the same server's `/api` routes, so no separate frontend server or API URL is needed. The health check is `http://localhost:3000/api/health`.
+
+Existing listings attached to an Admin account must be assigned to a registered Property owner through Admin → Edit before students can contact the owner or send an enquiry. Reassigning the listing also moves its existing enquiries to the selected owner’s dashboard.
