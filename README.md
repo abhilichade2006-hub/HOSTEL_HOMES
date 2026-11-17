@@ -36,6 +36,7 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Signed-in User accounts can rate approved rooms from 1 to 5 stars and update their rating. Cards and details show the average and rating count. Owner and Admin accounts cannot rate rooms; ratings do not verify a stay.
 - Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
 - Owners and admins can optionally pin a property's location on an OpenStreetMap map. Saved pins appear in room details; unpinned rooms link to the locality instead. No map API key is required.
+- In Add/Edit property, the **Property location (optional)** map is always visible directly below City and Locality. Click the map or use **Use map centre**, then save. Existing rooms need an owner-selected pin before room details display an embedded map.
 - Private in-app alerts: admins receive listing review requests, owners receive enquiries and listing decisions, and students receive enquiry status updates. The Alerts button shows unread updates and supports marking them as read.
 - Optional transactional email alerts through Brevo's HTTPS API, with a local SQLite outbox and retries.
 - Data stored in SQLite database file, shared by app sessions on this computer.

@@ -38,6 +38,11 @@ test('account, listing, approval and enquiry flows', async () => {
   try {
     await start();
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
+    const homepage = await (await fetch(base + '/')).text();
+    for (const asset of ['app.css', 'maps.js', 'app.js']) {
+      assert.ok(homepage.includes(`${asset}?v=map-location-2`));
+      assert.equal((await fetch(`${base}/${asset}?v=map-location-2`)).status, 200);
+    }
     assert.equal((await fetch(base + '/app.js')).status, 200);
     assert.equal((await fetch(base + '/maps.js')).status, 200);
     assert.equal((await fetch(base + '/vendor/leaflet/leaflet.js')).status, 200);

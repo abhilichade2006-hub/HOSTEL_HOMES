@@ -18,8 +18,7 @@ test('map links distinguish a saved pin from an unpinned locality', () => {
 });
 
 test('location picker stores only a chosen pin, supports clearing, and cleans up its map', () => {
-  const elements = Object.fromEntries(['locationPicker', 'pinLatitude', 'pinLongitude', 'pinStatus', 'clearPin', 'useMapCentre', 'pinMap'].map(id => [id, { value: '' }]));
-  elements.locationPicker.addEventListener = (event, callback) => { elements.locationPicker.toggle = callback; };
+  const elements = Object.fromEntries(['pinLatitude', 'pinLongitude', 'pinStatus', 'clearPin', 'useMapCentre', 'pinMap'].map(id => [id, { value: '' }]));
   const events = {};
   let removed = false;
   let markers = 0;
@@ -35,8 +34,6 @@ test('location picker stores only a chosen pin, supports clearing, and cleans up
   });
   vm.runInContext(source, maps);
   maps.initLocationPicker();
-  elements.locationPicker.open = true;
-  elements.locationPicker.toggle();
   assert.equal(markers, 0);
   assert.equal(elements.pinLatitude.value, '');
   elements.useMapCentre.onclick();
@@ -49,4 +46,19 @@ test('location picker stores only a chosen pin, supports clearing, and cleans up
   assert.equal(elements.pinLatitude.value, '0.000000');
   maps.destroyMap();
   assert.equal(removed, true);
+});
+
+test('a saved location can still be removed when the map library is unavailable', () => {
+  const elements = Object.fromEntries(['pinLatitude', 'pinLongitude', 'pinStatus', 'clearPin', 'useMapCentre', 'pinMap'].map(id => [id, { value: '' }]));
+  elements.pinLatitude.value = '18.5';
+  elements.pinLongitude.value = '73.8';
+  const maps = vm.createContext({ document: { getElementById: id => elements[id] } });
+  vm.runInContext(source, maps);
+  maps.initLocationPicker();
+  assert.equal(elements.clearPin.disabled, false);
+  assert.equal(elements.useMapCentre.disabled, true);
+  assert.match(elements.pinStatus.textContent, /Map unavailable/);
+  elements.clearPin.onclick();
+  assert.equal(elements.pinLatitude.value, '');
+  assert.equal(elements.pinLongitude.value, '');
 });
