@@ -37,39 +37,37 @@ function initPropertyMap(property) {
 }
 
 function initLocationPicker() {
-  const details = document.getElementById('locationPicker');
-  details.addEventListener('toggle', () => {
-    if (!details.open || activeMap) return;
-    const latitude = document.getElementById('pinLatitude');
-    const longitude = document.getElementById('pinLongitude');
-    const status = document.getElementById('pinStatus');
-    const clear = document.getElementById('clearPin');
-    const existing = latitude.value !== '' && longitude.value !== '';
-    let map, marker;
-    clear.disabled = !existing;
-    clear.onclick = () => {
-      if (marker) { map.removeLayer(marker); marker = null; }
-      latitude.value = ''; longitude.value = ''; clear.disabled = true;
-      status.textContent = 'No pin selected.';
-    };
-    if (typeof L === 'undefined') {
-      document.getElementById('useMapCentre').disabled = true;
-      status.textContent = 'Map unavailable. You can save the listing and add a location later.';
-      return;
-    }
-    const centre = existing ? [Number(latitude.value), Number(longitude.value)] : [18.5204, 73.8567];
-    map = createRoomMap(document.getElementById('pinMap'), centre, existing ? 15 : 11);
-    function setPin(point) {
-      point = L.latLng(point).wrap();
-      latitude.value = point.lat.toFixed(6);
-      longitude.value = point.lng.toFixed(6);
-      if (marker) marker.setLatLng(point);
-      else { marker = L.marker(point, { draggable: true }).addTo(map); marker.on('dragend', () => setPin(marker.getLatLng())); }
-      status.textContent = 'Pin added. You can drag it to adjust the location.';
-      clear.disabled = false;
-    }
-    if (existing) setPin(centre);
-    map.on('click', event => setPin(event.latlng));
-    document.getElementById('useMapCentre').onclick = () => setPin(map.getCenter());
-  });
+  const element = document.getElementById('pinMap');
+  if (!element || activeMap) return;
+  const latitude = document.getElementById('pinLatitude');
+  const longitude = document.getElementById('pinLongitude');
+  const status = document.getElementById('pinStatus');
+  const clear = document.getElementById('clearPin');
+  const existing = latitude.value !== '' && longitude.value !== '';
+  let map, marker;
+  clear.disabled = !existing;
+  clear.onclick = () => {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    latitude.value = ''; longitude.value = ''; clear.disabled = true;
+    status.textContent = 'No pin selected.';
+  };
+  if (typeof L === 'undefined') {
+    document.getElementById('useMapCentre').disabled = true;
+    status.textContent = 'Map unavailable. You can save the listing and add a location later.';
+    return;
+  }
+  const centre = existing ? [Number(latitude.value), Number(longitude.value)] : [18.5204, 73.8567];
+  map = createRoomMap(element, centre, existing ? 15 : 11);
+  function setPin(point) {
+    point = L.latLng(point).wrap();
+    latitude.value = point.lat.toFixed(6);
+    longitude.value = point.lng.toFixed(6);
+    if (marker) marker.setLatLng(point);
+    else { marker = L.marker(point, { draggable: true }).addTo(map); marker.on('dragend', () => setPin(marker.getLatLng())); }
+    status.textContent = 'Pin added. You can drag it to adjust the location.';
+    clear.disabled = false;
+  }
+  if (existing) setPin(centre);
+  map.on('click', event => setPin(event.latlng));
+  document.getElementById('useMapCentre').onclick = () => setPin(map.getCenter());
 }
