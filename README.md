@@ -33,7 +33,9 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Owners create and edit listings, view enquiries and delete their own listings; owner edits return listings to Pending approval.
 - Admins list their own properties or assign listings to registered owners, review and publish/reject listings, manage availability and see overview counts. Admins receive and manage enquiries only for properties they own.
 - Room galleries support up to six uploaded photos or image URLs, with optional photo labels.
-- Signed-in User accounts can rate approved rooms from 1 to 5 stars and update their rating. Cards and details show the average and rating count. Owner and Admin accounts cannot rate rooms; ratings do not verify a stay.
+- Select up to three rooms and compare rent, deposit, first-month costs, location, preference, availability and amenities. Selections stay available while filtering, and the comparison refreshes listing details before opening. Selections reset when the page reloads.
+- Room details show first month's rent plus deposit as a move-in estimate. Other charges must be confirmed with the owner.
+- Share a direct room link with friends or family using **Share room**. A shared `/?room=123` link opens the public room details. Copying supports manual selection if clipboard access is unavailable.
 - Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
 - Owners and admins can optionally pin a property's location on an OpenStreetMap map. Saved pins appear in room details; unpinned rooms link to the locality instead. No map API key is required.
 - In Add/Edit property, the **Property location (optional)** map is always visible directly below City and Locality. Click the map or use **Use map centre**, then save. Existing rooms need an owner-selected pin before room details display an embedded map.
@@ -58,7 +60,7 @@ This package uses Node.js built-in `node:sqlite` instead of `better-sqlite3`, so
 
 ## Verify the local backend
 
-Run `npm test`. The integration test starts a separate server with a temporary SQLite database and checks authentication, permissions, room publishing, photos, ratings, map coordinates, favourites, enquiries and private notifications, then restarts the server to verify persistence. Map picker and email queue tests run separately; email API responses are mocked. Tests do not modify your normal database or send real emails.
+Run `npm test`. The integration test starts a separate server with a temporary SQLite database and checks authentication, permissions, room publishing, photos, removed rating routes, map coordinates, favourites, enquiries and private notifications, then restarts the server to verify persistence. Room tools, listing forms, map picker and email queue tests run separately; email API responses are mocked. Tests do not modify your normal database or send real emails.
 
 Use `http://localhost:3000` for the site and `http://localhost:3000/login` for login. Both pages call the same server's `/api` routes, so no separate frontend server or API URL is needed. The health check is `http://localhost:3000/api/health`.
 

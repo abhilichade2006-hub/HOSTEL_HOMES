@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEX
 CREATE TABLE IF NOT EXISTS properties (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, title TEXT NOT NULL, type TEXT NOT NULL, rent INTEGER NOT NULL CHECK(rent > 0), deposit INTEGER NOT NULL DEFAULT 0, city TEXT NOT NULL, locality TEXT NOT NULL, facilities TEXT NOT NULL DEFAULT '[]', description TEXT NOT NULL, phone TEXT NOT NULL DEFAULT '', gender TEXT NOT NULL DEFAULT 'Any', image_url TEXT NOT NULL DEFAULT '', availability TEXT NOT NULL DEFAULT 'Available', status TEXT NOT NULL DEFAULT 'Pending' CHECK(status IN ('Pending','Approved','Rejected')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS favourites (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,property_id));
 CREATE TABLE IF NOT EXISTS enquiries (id INTEGER PRIMARY KEY AUTOINCREMENT, property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, move_date TEXT NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Pending' CHECK(status IN ('Pending','Contacted','Closed')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS ratings (property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, stars INTEGER NOT NULL CHECK(typeof(stars)='integer' AND stars BETWEEN 1 AND 5), PRIMARY KEY(property_id,user_id));
 CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, property_id INTEGER REFERENCES properties(id) ON DELETE SET NULL, kind TEXT NOT NULL, message TEXT NOT NULL, is_read INTEGER NOT NULL DEFAULT 0 CHECK(is_read IN (0,1)), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE INDEX IF NOT EXISTS notifications_user ON notifications(user_id,is_read,id);
 `);
@@ -51,7 +50,7 @@ if (adminEmail && adminPassword && !db.prepare('SELECT id FROM users WHERE email
 app.use(helmet({contentSecurityPolicy:false,referrerPolicy:{policy:'strict-origin-when-cross-origin'}}));
 app.use(express.json({limit:'13mb'}));
 app.use('/vendor/leaflet',express.static(path.join(path.dirname(require.resolve('leaflet/package.json')),'dist')));
-for (const file of ['app.js','app.css','login.js','maps.js']) app.get('/'+file,(req,res)=>res.sendFile(path.join(__dirname,file)));
+for (const file of ['app.js','app.css','login.js','maps.js','browse.js']) app.get('/'+file,(req,res)=>res.sendFile(path.join(__dirname,file)));
 const safeUser = u => ({id:u.id,name:u.name,email:u.email,role:u.role});
 function auth(req,res,next){
   const h=req.headers.authorization||''; const token=h.startsWith('Bearer ')?h.slice(7):'';
@@ -68,7 +67,7 @@ function validImage(value){return typeof value==='string'&&(value===''||(/^https
 function validListingOwner(id,user){return Number.isSafeInteger(id)&&((user.role==='Admin'&&id===user.id)||!!db.prepare("SELECT id FROM users WHERE id=? AND role='Owner'").get(id));}
 function validLabels(labels){return Array.isArray(labels)&&labels.length<=6&&labels.every(label=>['','Bedroom','Bathroom','Kitchen','Common area','Other'].includes(label));}
 function propertyShape(p){return {...p,images:[p.image_url,...JSON.parse(p.image_urls||'[]')].filter(Boolean),image_labels:JSON.parse(p.image_labels||'[]'),facilities:JSON.parse(p.facilities||'[]'),rent:Number(p.rent),deposit:Number(p.deposit),ownerName:p.owner_name||p.ownerName||'Property owner'};}
-const propertySelect = `SELECT p.*,u.name owner_name,u.role owner_role,(SELECT AVG(stars) FROM ratings WHERE property_id=p.id) rating_average,(SELECT COUNT(*) FROM ratings WHERE property_id=p.id) rating_count`;
+const propertySelect = `SELECT p.*,u.name owner_name,u.role owner_role`;
 app.get('/api/health',(req,res)=>res.json({ok:true,service:'Hostel Homes API',database:'SQLite'}));
 app.post('/api/auth/register', (req,res)=>{
   const {name,email,password,role:requestedRole='User'}=req.body||{};
@@ -94,22 +93,6 @@ app.get('/api/properties',(req,res)=>{
   res.json({properties:db.prepare(sql).all(...args).map(propertyShape)});
 });
 app.get('/api/properties/:id',(req,res)=>{const p=db.prepare(`${propertySelect} FROM properties p JOIN users u ON u.id=p.owner_id WHERE p.id=? AND p.status='Approved'`).get(req.params.id);if(!p)return res.status(404).json({error:'Property not found.'});res.json({property:propertyShape(p)});});
-app.get('/api/properties/:id/rating',auth,role('User'),(req,res)=>{
-  const property=db.prepare("SELECT id FROM properties WHERE id=? AND status='Approved'").get(req.params.id);
-  if(!property)return res.status(404).json({error:'Room not found.'});
-  const rating=db.prepare('SELECT stars FROM ratings WHERE property_id=? AND user_id=?').get(property.id,req.user.id);
-  res.json({rating:rating?.stars??null});
-});
-app.put('/api/properties/:id/rating',auth,role('User'),(req,res)=>{
-  const property=db.prepare("SELECT id,owner_id FROM properties WHERE id=? AND status='Approved'").get(req.params.id);
-  if(!property)return res.status(404).json({error:'Room not found.'});
-  if(property.owner_id===req.user.id)return res.status(403).json({error:'You cannot rate your own room.'});
-  const stars=req.body?.stars;
-  if(!Number.isInteger(stars)||stars<1||stars>5)return res.status(400).json({error:'Choose a whole number of stars from 1 to 5.'});
-  db.prepare('INSERT INTO ratings(property_id,user_id,stars) VALUES(?,?,?) ON CONFLICT(property_id,user_id) DO UPDATE SET stars=excluded.stars').run(property.id,req.user.id,stars);
-  const summary=db.prepare('SELECT AVG(stars) rating_average,COUNT(*) rating_count FROM ratings WHERE property_id=?').get(property.id);
-  res.json({rating:stars,...summary});
-});
 app.post('/api/properties',auth,role('Owner','Admin'),(req,res)=>{
  const b=req.body||{};const {title,type,rent,deposit=0,city,locality,facilities=[],description,phone='',gender='Any',image_url='',image_urls=[],image_labels=[],availability='Available',latitude=null,longitude=null}=b;
  const ownerId=req.user.role==='Admin'&&b.owner_id!==undefined?Number(b.owner_id):req.user.id;
