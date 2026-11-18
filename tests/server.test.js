@@ -17,7 +17,7 @@ async function freePort() {
 
 test('account, listing, approval and enquiry flows', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostel-homes-test-'));
-  for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
+  for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js', 'browse.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   let child;
@@ -39,9 +39,9 @@ test('account, listing, approval and enquiry flows', async () => {
     await start();
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     const homepage = await (await fetch(base + '/')).text();
-    for (const asset of ['app.css', 'maps.js', 'app.js']) {
-      assert.ok(homepage.includes(`${asset}?v=map-location-2`));
-      assert.equal((await fetch(`${base}/${asset}?v=map-location-2`)).status, 200);
+    for (const asset of ['app.css', 'maps.js', 'browse.js', 'app.js']) {
+      assert.ok(homepage.includes(`${asset}?v=room-tools-1`));
+      assert.equal((await fetch(`${base}/${asset}?v=room-tools-1`)).status, 200);
     }
     assert.equal((await fetch(base + '/app.js')).status, 200);
     assert.equal((await fetch(base + '/maps.js')).status, 200);
@@ -176,29 +176,16 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
     assert.equal((await request(`/api/properties/${id}`)).body.property.latitude, 0);
     assert.equal((await request(`/api/properties/${id}`)).body.property.longitude, 0);
-    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 0);
-    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, null);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).body.rating, null);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 })).status, 401);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, owner.body.token)).status, 403);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, admin.body.token)).status, 403);
-    for (const stars of [0, 6, 2.5, '5', null, true]) {
-      assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars }, user.body.token)).status, 400);
-    }
-    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 2 }, user.body.token)).body.rating_count, 1);
-    const secondStudent = await request('/api/auth/register', 'POST', { name: 'Second student', email: 'second@test.local', password: 'password123' });
-    assert.equal(secondStudent.status, 201);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, secondStudent.body.token)).body.rating_average, 3.5);
-    const updatedRating = await request(`/api/properties/${id}/rating`, 'PUT', { stars: 4 }, user.body.token);
-    assert.equal(updatedRating.status, 200);
-    assert.equal(updatedRating.body.rating_average, 4.5);
-    assert.equal(updatedRating.body.rating_count, 2);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).body.rating, 4);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, secondStudent.body.token)).body.rating, 5);
-    assert.equal((await request('/api/properties')).body.properties.find(p => p.id === id).rating_average, 4.5);
-    assert.equal((await request('/api/owner/properties', 'GET', undefined, owner.body.token)).body.properties.find(p => p.id === id).rating_count, 2);
+    const roomWithoutRatings = (await request(`/api/properties/${id}`)).body.property;
+    assert.equal('rating_count' in roomWithoutRatings, false);
+    assert.equal('rating_average' in roomWithoutRatings, false);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, user.body.token)).status, 404);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 }, user.body.token)).status, 404);
+    assert.equal((await request(`/api/properties/${id}/rating`, 'PUT', { stars: 5 })).status, 404);
+    assert.equal((await request('/api/properties')).body.properties.find(p => p.id === id).id, id);
+    assert.equal((await request('/api/owner/properties', 'GET', undefined, owner.body.token)).body.properties.find(p => p.id === id).id, id);
     assert.equal((await request(`/api/favourites/${id}`, 'POST', {}, user.body.token)).body.saved, true);
-    assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties[0].rating_average, 4.5);
+    assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties[0].id, id);
     assert.equal((await request('/api/enquiries', 'POST', {}, user.body.token)).status, 400);
     assert.equal((await request('/api/enquiries', 'POST', { property_id: id, move_date: '2027-01-01', message: 'Hello' }, user.body.token)).status, 201);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].user_email, 'user@test.local');
@@ -226,15 +213,12 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.deepEqual(await alerts(owner), alertsBeforeRestart);
     assert.equal((await request(`/api/properties/${id}`)).body.property.longitude, 0);
     assert.equal((await request(`/api/properties/${id}`)).body.property.title, 'Updated room');
-    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_average, 4.5);
-    assert.equal((await request(`/api/properties/${id}`)).body.property.rating_count, 2);
-    assert.equal((await request(`/api/properties/${id}/rating`, 'GET', undefined, loggedInAgain.body.token)).body.rating, 4);
     assert.equal((await request('/api/favourites', 'GET', undefined, loggedInAgain.body.token)).body.properties[0].id, id);
     assert.equal((await request('/api/enquiries', 'GET', undefined, loggedInAgain.body.token)).body.enquiries[0].status, 'Contacted');
     const all = (await request('/api/admin/properties', 'GET', undefined, admin.body.token)).body.properties;
     for (const property of all) assert.equal((await request(`/api/properties/${property.id}`, 'DELETE', undefined, admin.body.token)).status, 200);
     const database = new DatabaseSync(path.join(dir, 'hostel-homes.sqlite'), { readOnly: true });
-    assert.equal(database.prepare('SELECT COUNT(*) n FROM ratings').get().n, 0);
+    assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ratings'").get(), undefined);
     database.close();
     await stop(); await start();
     assert.equal((await request('/api/properties')).body.properties.length, 0);
