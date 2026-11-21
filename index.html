@@ -1,15 +1,45 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#075985">
-  <title>Hostel Homes — Find your next home</title><link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><link rel="stylesheet" href="app.css?v=room-tools-1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff">
+  <title>Hostel Homes — Find your next home</title><link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><link rel="stylesheet" href="app.css?v=sharp-white-1">
 </head>
 <body>
 <header class="top"><a class="brand" href="/" aria-label="Hostel Homes home"><span class="mark">H</span>Hostel<span>Homes</span></a><nav aria-label="Main navigation"><a href="#explore">Find a stay</a><a href="#how">How it works</a></nav><div class="top-actions"><button class="btn ghost notifications-button" id="notificationsBtn" hidden>Alerts <span id="notificationCount" class="notification-count" hidden></span></button><button class="btn ghost" id="authBtn">Log in</button><button class="btn dark" id="dashboardBtn">List your property ↗</button></div></header>
 <main>
-<section class="hero"><div class="hero-copy"><div class="eyebrow"><i></i> FIND YOUR PLACE</div><h1>Find a place<br>that <em>feels like home.</em></h1><p>Explore hostels, rooms and shared flats that fit your budget and your next chapter.</p><div class="hero-foot"><span>⌂ Browse by location</span><span>♡ Save your favourites</span><span>✉ Enquire directly</span></div></div><div class="hero-art"><div class="sun"></div><div class="hill h1"></div><div class="hill h2"></div><div class="house"><div class="roof"></div><div class="housebody"><div class="window"></div><div class="window"></div><div class="door"></div></div></div><div class="plant p1">♣</div><div class="plant p2">♣</div><div class="art-note"><b>Find your corner.</b><small>A good place to begin.</small></div></div></section>
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow"><i></i> STUDENT LIVING. SIMPLER CHOICES.</div>
+    <h1>Find your<br><em>next home.</em></h1>
+    <p>Rooms, hostels and shared flats. Find a space that fits your life and your budget.</p>
+    <div class="hero-foot"><span>Browse stays</span><span>Compare costs</span><span>Contact owners</span></div>
+  </div>
+  <div class="hero-art">
+    <div class="hero-art-top"><span>ROOM TO BELONG</span><span aria-hidden="true">HH / 01</span></div>
+    <svg viewBox="0 0 480 220" role="img" aria-label="Minimal geometric illustration of student homes">
+      <path d="M24 190H456" stroke="#c9d5cc"/>
+      <path d="M58 60L78 44H226V170L206 186Z" fill="#c6d8c9"/>
+      <rect x="58" y="60" width="148" height="126" fill="#e4ece5" stroke="#496d55"/>
+      <rect x="44" y="46" width="176" height="14" fill="#254d38"/>
+      <rect x="78" y="78" width="32" height="32" fill="#fff" stroke="#496d55"/>
+      <rect x="152" y="78" width="32" height="32" fill="#fff" stroke="#496d55"/>
+      <path d="M94 78V110M78 94H110M168 78V110M152 94H184" stroke="#496d55"/>
+      <rect x="114" y="130" width="38" height="56" fill="#176b48"/>
+      <path d="M142 156V165" stroke="#fff"/>
+      <rect x="250" y="92" width="150" height="94" fill="#fff" stroke="#496d55"/>
+      <rect x="238" y="80" width="174" height="12" fill="#254d38"/>
+      <rect x="268" y="110" width="26" height="34" fill="#dce8dd" stroke="#496d55"/>
+      <rect x="312" y="110" width="26" height="34" fill="#dce8dd" stroke="#496d55"/>
+      <rect x="356" y="110" width="26" height="34" fill="#dce8dd" stroke="#496d55"/>
+      <path d="M250 160H400M216 186H238M406 186H434" stroke="#496d55"/>
+      <rect x="422" y="164" width="16" height="22" fill="#b7cbbd"/>
+      <path d="M430 164V134M430 150L418 138M430 144L440 134" stroke="#496d55" stroke-width="2"/>
+    </svg>
+    <div class="hero-art-caption"><strong>Space for what’s next.</strong><span>Make it yours.</span></div>
+  </div>
+</section>
 <section class="search-section" aria-label="Search accommodation"><div class="search-header"><div><span class="eyebrow">START YOUR SEARCH</span><h2>Where would you like to stay?</h2></div><p>Filter by location, room type and monthly budget.</p></div><div class="search"><label class="search-field search-location"><span>Location or property</span><input id="query" placeholder="Try Pune, Wakad or a property name" autocomplete="off"></label><label class="search-field"><span>Room type</span><select id="type"><option>All</option><option>Hostel</option><option>Single Room</option><option>Shared Room</option><option>Flat</option></select></label><label class="search-field"><span>Monthly budget</span><select id="budget"><option value="">Any budget</option><option value="6000">Up to ₹6,000</option><option value="9000">Up to ₹9,000</option><option value="12000">Up to ₹12,000</option><option value="16000">Up to ₹16,000</option></select></label><button class="btn dark" id="searchBtn">Search stays →</button></div><div class="extra-filters"><label>Gender preference<select id="genderFilter"><option value="">Any</option><option>Men</option><option>Women</option></select></label><label>Must have<select id="amenityFilter"><option value="">Any amenity</option><option>Wi-Fi</option><option>Meals</option><option>Laundry</option></select></label></div><div class="quick-types" aria-label="Quick room type filters"><span>Explore:</span><button type="button" data-type="All" class="active" aria-pressed="true">All stays</button><button type="button" data-type="Hostel" aria-pressed="false">Hostels</button><button type="button" data-type="Single Room" aria-pressed="false">Private rooms</button><button type="button" data-type="Shared Room" aria-pressed="false">Shared rooms</button><button type="button" data-type="Flat" aria-pressed="false">Flats</button></div></section>
 <section id="explore" class="explore"><div class="section-head"><div><div class="eyebrow">EXPLORE ACCOMMODATION</div><h2>Find your <em>kind of place.</em></h2><p>Compare available stays, explore amenities and send an enquiry when one feels right.</p></div><div class="sort-wrap"><span id="count" aria-live="polite">Loading stays…</span><label><span class="sr-only">Sort stays</span><select id="sort"><option value="recommended">Recommended</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label></div></div><div id="notice" class="notice hidden" role="status"></div><div class="carousel-heading"><p>Browse stays <span>· Scroll to see more</span></p><div class="carousel-controls"><button type="button" id="scrollPrev" aria-label="Scroll stays left" aria-controls="grid">←</button><button type="button" id="scrollNext" aria-label="Scroll stays right" aria-controls="grid">→</button></div></div><div id="grid" class="grid" role="region" aria-label="Available stays" tabindex="0"></div><div id="empty" class="empty hidden"><h3>No stays match your search.</h3><p>Try a different location, room type or budget.</p><button class="btn ghost" id="clearFilters">Clear filters</button></div><p class="listing-note">Check listing details with the property owner before paying or visiting.</p></section>
 <section id="how" class="how"><div><div class="eyebrow">SIMPLE BY DESIGN</div><h2>From search to <em>settled.</em></h2></div><div class="steps"><article><b>01</b><h3>Find your fit</h3><p>Search by location and narrow down the stays that fit your budget.</p></article><article><b>02</b><h3>Explore the details</h3><p>Browse photos, amenities and monthly rent before you decide.</p></article><article><b>03</b><h3>Get in touch</h3><p>Send an enquiry to the owner and ask what you need to know.</p></article></div></section></main>
 <footer><a class="brand" href="/"><span class="mark">H</span>Hostel<span>Homes</span></a><span>Find a place that feels right.<small>Check listing details with the property owner before paying or visiting.</small></span></footer>
-<aside id="compareBar" class="compare-bar" aria-label="Selected rooms for comparison" hidden><div class="compare-summary"><strong id="compareCount" aria-live="polite"></strong><div id="compareSelections" class="compare-selections"></div></div><div class="compare-actions"><button id="showCompare" class="btn dark" disabled>Compare rooms</button><button id="clearCompare" class="btn ghost">Clear</button></div></aside><div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Property and account details"><div class="modal-card"><button id="closeModal" class="close" aria-label="Close">×</button><div id="modalBody"></div></div></div><div id="toast" class="toast" role="status"></div><script src="/vendor/leaflet/leaflet.js"></script><script src="maps.js?v=room-tools-1"></script><script src="browse.js?v=room-tools-1"></script><script src="app.js?v=room-tools-1"></script></body></html>
+<aside id="compareBar" class="compare-bar" aria-label="Selected rooms for comparison" hidden><div class="compare-summary"><strong id="compareCount" aria-live="polite"></strong><div id="compareSelections" class="compare-selections"></div></div><div class="compare-actions"><button id="showCompare" class="btn dark" disabled>Compare rooms</button><button id="clearCompare" class="btn ghost">Clear</button></div></aside><div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Property and account details"><div class="modal-card"><button id="closeModal" class="close" aria-label="Close">×</button><div id="modalBody"></div></div></div><div id="toast" class="toast" role="status"></div><script src="/vendor/leaflet/leaflet.js"></script><script src="maps.js?v=room-tools-1"></script><script src="browse.js?v=room-tools-1"></script><script src="app.js?v=sharp-white-1"></script></body></html>
