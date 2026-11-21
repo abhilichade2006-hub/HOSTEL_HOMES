@@ -42,7 +42,7 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Private in-app alerts: admins receive listing review requests, owners receive enquiries and listing decisions, and students receive enquiry status updates. The Alerts button shows unread updates and supports marking them as read.
 - Optional transactional email alerts through Brevo's HTTPS API, with a local SQLite outbox and retries.
 - Data stored in SQLite database file, shared by app sessions on this computer.
-- Responsive browser UI.
+- Responsive white interface with square cards and controls, crisp borders, readable sans-serif type, and green accents across browsing, login and account workspaces.
 
 ## Important notes
 
