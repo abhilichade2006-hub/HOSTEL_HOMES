@@ -38,8 +38,8 @@ button:disabled{cursor:default;opacity:.45}
 .hero-foot span::before{content:'';display:inline-block;width:4px;height:4px;margin:0 8px 3px 0;background:var(--accent)}
 .hero-art{width:100%;border:1px solid var(--line);background:#f8faf8}
 .hero-art-top{display:flex;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;letter-spacing:1.7px}
-.hero-art svg{display:block;width:100%;height:220px}
-.hero-art-caption{display:flex;justify-content:space-between;align-items:end;gap:12px;padding:0 20px 18px}
+.hero-art img{display:block;width:100%;height:280px;object-fit:cover}
+.hero-art-caption{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:8px 12px;padding:18px 20px}
 .hero-art-caption strong{font-size:20px;letter-spacing:-.6px}
 .hero-art-caption span{color:var(--muted);font-size:12px}
 .search-section{padding:26px;border:1px solid #cbd5cd;background:#fff}
@@ -247,11 +247,12 @@ body:has(.modal:not(.hidden)){overflow:hidden}
 @media(max-width:900px){
   .hero,.search-section,.explore,.how,.auth-header,.auth-layout{width:calc(100% - 48px)}
   .top{padding-right:24px;padding-left:24px}.top nav{display:none}.top-actions{margin-left:auto}
-  .hero{grid-template-columns:1fr;padding-top:48px;padding-bottom:40px}.hero-art{display:none}.hero h1{font-size:60px}
+  .hero{grid-template-columns:1fr;padding-top:48px;padding-bottom:40px}.hero-art img{height:300px}.hero h1{font-size:60px}
   .search{grid-template-columns:repeat(2,minmax(0,1fr))}.search-location{grid-column:1/-1;border-right:0;border-bottom:1px solid var(--line)}.search>.btn{grid-column:1/-1}.search-field:nth-child(3){border-right:0}.search-header p{display:none}.section-head{align-items:start}
   .auth-layout{grid-template-columns:1fr;gap:32px;min-height:auto;padding-top:40px}.auth-intro h1{font-size:48px}.auth-intro p{max-width:600px}.auth-highlight{display:none}.auth-panel{width:100%;max-width:540px}
 }
 @media(max-width:600px){
+  .hero-art img{height:220px}.hero-art-top{padding:12px;font-size:9px;letter-spacing:1px}.hero-art-caption{padding:16px}
   html{scroll-padding-top:130px}
   .hero,.search-section,.explore,.how,.auth-header,.auth-layout{width:calc(100% - 32px)}
   .top{flex-wrap:wrap;gap:12px;min-height:72px;padding:14px 16px}.brand{font-size:18px}.mark{width:34px;height:34px;font-size:20px}.top-actions{flex-wrap:wrap;justify-content:end;gap:6px}.top-actions .btn{min-height:38px;padding:9px 10px;font-size:12px}
