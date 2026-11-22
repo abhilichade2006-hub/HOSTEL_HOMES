@@ -36,6 +36,42 @@ function initPropertyMap(property) {
   L.marker([property.latitude, property.longitude]).addTo(map);
 }
 
+function dashboardMapSection(properties) {
+  const pinned = properties.filter(hasMapPin).length;
+  const description = properties.length === 0
+    ? 'Add a property and save its location to show it here.'
+    : pinned === 0
+      ? 'No location pins saved yet. Edit a listing below to add its location.'
+      : `${pinned} of ${properties.length} listings have location pins. Select a numbered pin to view or edit a listing.`;
+  return `<section class="dashboard-map-section" aria-labelledby="dashboardMapHeading"><div class="dashboard-map-heading"><h3 id="dashboardMapHeading">Property map</h3><span>${pinned} pinned</span></div><p class="muted">${description}</p><div id="dashboardMap" class="property-map dashboard-map" aria-label="Map of property listings"></div></section>`;
+}
+
+function initDashboardMap(properties, onEdit) {
+  const element = document.getElementById('dashboardMap');
+  if (!element) return;
+  if (typeof L === 'undefined') { element.textContent = 'Map unavailable. You can still manage your listings below.'; return; }
+  const pinned = properties.filter(hasMapPin);
+  const first = pinned[0];
+  const map = createRoomMap(element, first ? [first.latitude, first.longitude] : [18.5204, 73.8567], first ? 14 : 11);
+  pinned.forEach((property, index) => {
+    const popup = document.createElement('div');
+    popup.className = 'dashboard-map-popup';
+    const title = document.createElement('strong');
+    title.textContent = property.title;
+    const details = document.createElement('p');
+    details.textContent = `${property.locality}, ${property.city} · ${property.status} · ${property.availability}`;
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'smallbtn';
+    edit.textContent = 'Edit listing';
+    edit.onclick = () => onEdit(property);
+    popup.append(title, details, edit);
+    const icon = L.divIcon({ className: 'dashboard-map-marker', html: String(index + 1), iconSize: [28, 28], iconAnchor: [14, 28] });
+    L.marker([property.latitude, property.longitude], { title: property.title, icon }).addTo(map).bindPopup(popup);
+  });
+  if (pinned.length > 1) map.fitBounds(L.latLngBounds(pinned.map(property => [property.latitude, property.longitude])), { padding: [24, 24], maxZoom: 15 });
+}
+
 function initLocationPicker() {
   const element = document.getElementById('pinMap');
   if (!element || activeMap) return;

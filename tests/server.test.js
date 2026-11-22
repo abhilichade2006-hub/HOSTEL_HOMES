@@ -40,7 +40,7 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     const homepage = await (await fetch(base + '/')).text();
     for (const asset of ['app.css', 'maps.js', 'browse.js', 'app.js']) {
-      const version = ['app.css', 'app.js'].includes(asset) ? 'sharp-white-1' : 'room-tools-1';
+      const version = asset === 'app.js' ? 'jpeg-upload-1' : asset === 'browse.js' ? 'room-tools-1' : 'dashboard-map-1';
       assert.ok(homepage.includes(`${asset}?v=${version}`));
       assert.equal((await fetch(`${base}/${asset}?v=${version}`)).status, 200);
     }
@@ -200,7 +200,10 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request(`/api/properties/${id}`, 'PATCH', { title: 'Updated room' }, owner.body.token)).status, 200);
     assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties.length, 0);
     assert.equal((await request(`/api/admin/properties/${id}/status`, 'PATCH', { status: 'Approved' }, admin.body.token)).status, 200);
+    const jpegPhoto = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(__dirname, '..', 'sample-photos', 'room-1.jpg')).toString('base64');
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { image_url: jpegPhoto }, admin.body.token)).status, 200);
     const beforeRestart = (await request(`/api/properties/${adminListing.body.id}`)).body.property;
+    assert.equal(beforeRestart.image_url, jpegPhoto);
     assert.equal((await request('/api/notifications/read', 'PATCH', {}, owner.body.token)).status, 200);
     assert.equal((await alerts(owner)).unread_count, 0);
     assert.ok((await alerts(user)).unread_count > 0);
