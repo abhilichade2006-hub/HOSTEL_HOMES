@@ -92,9 +92,12 @@ test('an acknowledged idempotent retry is recorded as accepted', async t => {
 test('overlapping flushes do not send the same queued email twice', async t => {
   const db = fixture(t);
   let release;
+  let markStarted;
+  const started = new Promise(resolve => { markStarted = resolve; });
   let calls = 0;
-  const delivery = createEmailDelivery(db, config, async () => { calls++; return new Promise(resolve => { release = () => resolve(accepted()); }); });
+  const delivery = createEmailDelivery(db, config, async () => { calls++; markStarted(); return new Promise(resolve => { release = () => resolve(accepted()); }); });
   const first = delivery.flush();
+  await started;
   await delivery.flush();
   assert.equal(calls, 1);
   release();

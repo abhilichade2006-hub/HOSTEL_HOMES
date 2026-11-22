@@ -6,6 +6,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
 const { DatabaseSync } = require('node:sqlite');
+const { postgresFixture } = require('./postgres-fixture.cjs');
 
 async function freePort() {
   const server = net.createServer();
@@ -15,15 +16,17 @@ async function freePort() {
   return port;
 }
 
-test('account, listing, approval and enquiry flows', async () => {
+for (const backend of ['SQLite', ...(process.env.TEST_DATABASE_URL ? ['PostgreSQL'] : [])]) {
+test(`${backend}: account, listing, approval and enquiry flows`, async t => {
+  const postgres = backend === 'PostgreSQL' ? await postgresFixture(t, process.env.TEST_DATABASE_URL) : null;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostel-homes-test-'));
-  for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js', 'browse.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
+  for (const file of ['server.js', 'database.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js', 'browse.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
   fs.cpSync(path.join(__dirname, '..', 'assets'), path.join(dir, 'assets'), { recursive: true });
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   let child;
   async function start() {
-    child = spawn(process.execPath, [path.join(dir, 'server.js')], { env: { ...process.env, NODE_PATH: path.join(__dirname, '..', 'node_modules'), PORT: String(port), ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'password123', JWT_SECRET: 'test-secret', BREVO_API_KEY: '', EMAIL_FROM: '' }, stdio: 'ignore' });
+    child = spawn(process.execPath, [path.join(dir, 'server.js')], { cwd:dir, env: { ...process.env, DATABASE_URL:postgres?.connectionString || '', NODE_ENV:'test', RENDER:'', NODE_PATH: path.join(__dirname, '..', 'node_modules'), PORT: String(port), ADMIN_EMAIL: 'admin@test.local', ADMIN_PASSWORD: 'password123', JWT_SECRET: 'test-secret', BREVO_API_KEY: '', EMAIL_FROM: '' }, stdio: 'ignore' });
     for (let i = 0; i < 100; i++) {
       if (child.exitCode !== null) throw Error(`Server exited: ${child.exitCode}`);
       try { if ((await fetch(base + '/api/health')).ok) return; } catch {}
@@ -38,6 +41,9 @@ test('account, listing, approval and enquiry flows', async () => {
   }
   try {
     await start();
+    assert.equal((await request('/api/health')).body.database, backend);
+    assert.equal((await request('/api/properties/not-a-number')).status, 404);
+    assert.equal((await request('/api/properties/999999999999999')).status, 404);
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     const homepage = await (await fetch(base + '/')).text();
     for (const asset of ['app.css', 'maps.js', 'browse.js', 'app.js']) {
@@ -98,6 +104,9 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await alerts(admin)).unread_count, 1);
     const adminListing = await request('/api/properties', 'POST', { ...listing, owner_id: owner.body.user.id, gender: 'Women', facilities: ['Wi-Fi','Laundry'], image_labels: ['Bedroom'], image_url: 'data:image/png;base64,aGVsbG8=', availability: 'Available', latitude: 18.5204, longitude: 73.8567 }, admin.body.token);
     assert.equal(adminListing.status, 201);
+    assert.equal((await request('/api/properties?q=pUnE')).body.properties.some(p => p.id === adminListing.body.id), true);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', {rent:5000.5,deposit:100.25}, admin.body.token)).status, 200);
+    assert.equal((await request(`/api/properties/${adminListing.body.id}`)).body.property.rent, 5000.5);
     assert.equal((await alerts(owner)).notifications[0].kind, 'listing_status');
     assert.equal((await request(`/api/properties/${adminListing.body.id}`)).body.property.latitude, 18.5204);
     assert.equal((await request(`/api/properties/${adminListing.body.id}`, 'PATCH', { latitude: null }, admin.body.token)).status, 400);
@@ -192,12 +201,18 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request('/api/properties')).body.properties.find(p => p.id === id).id, id);
     assert.equal((await request('/api/owner/properties', 'GET', undefined, owner.body.token)).body.properties.find(p => p.id === id).id, id);
     assert.equal((await request(`/api/favourites/${id}`, 'POST', {}, user.body.token)).body.saved, true);
+    const toggles = await Promise.all([request(`/api/favourites/${id}`, 'POST', {}, user.body.token),request(`/api/favourites/${id}`, 'POST', {}, user.body.token)]);
+    assert.ok(toggles.every(result => result.status === 200));
+    assert.deepEqual(toggles.map(result => result.body.saved).sort(), [false,true]);
     assert.equal((await request('/api/favourites', 'GET', undefined, user.body.token)).body.properties[0].id, id);
     assert.equal((await request('/api/enquiries', 'POST', {}, user.body.token)).status, 400);
     assert.equal((await request('/api/enquiries', 'POST', { property_id: id, move_date: '2027-01-01', message: 'Hello' }, user.body.token)).status, 201);
     assert.equal((await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0].user_email, 'user@test.local');
     const enquiry = (await request('/api/enquiries', 'GET', undefined, owner.body.token)).body.enquiries[0];
-    assert.equal((await request(`/api/enquiries/${enquiry.id}`, 'PATCH', { status: 'Contacted' }, owner.body.token)).status, 200);
+    const previousContactedCount = (await alerts(user)).notifications.filter(alert => alert.message.includes('now contacted')).length;
+    const statusUpdates = await Promise.all([request(`/api/enquiries/${enquiry.id}`, 'PATCH', {status:'Contacted'}, owner.body.token),request(`/api/enquiries/${enquiry.id}`, 'PATCH', {status:'Contacted'}, owner.body.token)]);
+    assert.ok(statusUpdates.every(result => result.status === 200));
+    assert.equal((await alerts(user)).notifications.filter(alert => alert.message.includes('now contacted')).length, previousContactedCount + 1);
     const contactedAlert = (await alerts(user)).notifications[0];
     assert.equal(contactedAlert.kind, 'enquiry_status');
     assert.match(contactedAlert.message, /contacted/);
@@ -227,9 +242,14 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.equal((await request('/api/enquiries', 'GET', undefined, loggedInAgain.body.token)).body.enquiries[0].status, 'Contacted');
     const all = (await request('/api/admin/properties', 'GET', undefined, admin.body.token)).body.properties;
     for (const property of all) assert.equal((await request(`/api/properties/${property.id}`, 'DELETE', undefined, admin.body.token)).status, 200);
-    const database = new DatabaseSync(path.join(dir, 'hostel-homes.sqlite'), { readOnly: true });
-    assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ratings'").get(), undefined);
-    database.close();
+    if (postgres) {
+      assert.equal((await postgres.db.prepare("SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_name='ratings'").all()).length, 0);
+      assert.equal(fs.existsSync(path.join(dir,'hostel-homes.sqlite')), false);
+    } else {
+      const database = new DatabaseSync(path.join(dir, 'hostel-homes.sqlite'), { readOnly: true });
+      assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ratings'").get(), undefined);
+      database.close();
+    }
     await stop(); await start();
     assert.equal((await request('/api/properties')).body.properties.length, 0);
     assert.ok((await alerts(owner)).notifications.length > 0);
@@ -239,3 +259,4 @@ test('account, listing, approval and enquiry flows', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+}
