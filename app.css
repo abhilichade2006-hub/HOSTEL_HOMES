@@ -215,6 +215,17 @@ body:has(.modal:not(.hidden)){overflow:hidden}
 .share-label{margin:24px 0}
 
 /* Maps and account alerts */
+.dashboard-map-section{margin:24px 0;padding:18px;border:1px solid var(--line);background:#fff}
+.dashboard-map-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.dashboard-map-heading h3{margin:0;font-size:18px;font-weight:600;letter-spacing:-.3px}
+.dashboard-map-heading>span{color:var(--accent);font-size:13px;font-weight:600;white-space:nowrap}
+.dashboard-map-section>.muted{margin:10px 0 0}
+.dashboard-map-section .dashboard-map{height:300px;margin-bottom:0}
+.dashboard-map-marker{display:grid;place-items:center;border:2px solid #fff;background:var(--accent);color:#fff;font:600 14px 'Segoe UI',sans-serif}
+.dashboard-map-popup{min-width:160px;max-width:230px;font-family:'Segoe UI',system-ui,sans-serif}
+.dashboard-map-popup strong{font-size:15px;overflow-wrap:anywhere}
+.dashboard-map-popup p{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.dashboard-map-section .leaflet-popup-content-wrapper{border-radius:0}
 .property-map{position:relative;z-index:0;height:280px;margin:16px 0;overflow:hidden;border:1px solid var(--line);background:var(--soft)}
 .property-map .leaflet-control-attribution{color:var(--ink);font-size:11px}
 .property-map .leaflet-bar,.property-map .leaflet-bar a{border-radius:0}
@@ -255,4 +266,5 @@ body:has(.modal:not(.hidden)){overflow:hidden}
   .compare-bar{bottom:0;flex-direction:column;align-items:start;gap:12px;width:100%;padding:12px}.compare-pill{max-width:140px;font-size:12px}.compare-actions{width:100%}.compare-actions .btn:first-child{flex:1}.has-comparison{padding-bottom:220px}.has-comparison .toast{bottom:230px}.property-map{height:240px}
 }
 @media(max-width:440px){.form-row{grid-template-columns:1fr}}
+@media(max-width:600px){.dashboard-map-section{padding:14px}.dashboard-map-section .dashboard-map{height:260px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}.card:hover .visual img{transform:none}}

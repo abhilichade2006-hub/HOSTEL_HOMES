@@ -62,3 +62,74 @@ test('a saved location can still be removed when the map library is unavailable'
   assert.equal(elements.pinLatitude.value, '');
   assert.equal(elements.pinLongitude.value, '');
 });
+
+test('dashboard map section explains missing pins and handles a missing map library', () => {
+  const element = {};
+  const maps = vm.createContext({ document: { getElementById: () => element } });
+  vm.runInContext(source, maps);
+  assert.match(maps.dashboardMapSection([]), /Add a property/);
+  assert.match(maps.dashboardMapSection([{ latitude: null, longitude: null }]), /No location pins saved yet/);
+  assert.match(maps.dashboardMapSection([]), /id="dashboardMap"/);
+  maps.initDashboardMap([], () => {});
+  assert.match(element.textContent, /Map unavailable/);
+});
+
+function dashboardMapFixture() {
+  const markers = [];
+  const map = {
+    setView(centre, zoom) { this.centre = centre; this.zoom = zoom; return this; },
+    fitBounds(bounds, options) { this.bounds = bounds; this.boundsOptions = options; },
+    remove() { this.removed = true; }
+  };
+  const maps = vm.createContext({
+    document: {
+      getElementById: () => ({}),
+      createElement: tag => ({ tag, children: [], append(...children) { this.children.push(...children); } })
+    },
+    L: {
+      map: () => map,
+      tileLayer: () => ({ addTo() {} }),
+      divIcon: options => options,
+      latLngBounds: coordinates => coordinates,
+      marker: (coordinates, options) => {
+        const marker = { coordinates, options, addTo() { return this; }, bindPopup(popup) { this.popup = popup; return this; } };
+        markers.push(marker);
+        return marker;
+      }
+    }
+  });
+  vm.runInContext(source, maps);
+  return { maps, map, markers };
+}
+
+test('dashboard map uses saved pins, fits their bounds and safely opens the editor', () => {
+  const { maps, map, markers } = dashboardMapFixture();
+  const properties = [
+    { id: 1, title: '<img src=x onerror=alert(1)>', latitude: 0, longitude: 0, locality: 'Centre', city: 'City', status: 'Pending', availability: 'Available' },
+    { id: 2, title: 'Room', latitude: 18.5, longitude: 73.8, locality: 'Wakad', city: 'Pune', status: 'Approved', availability: 'Available' },
+    { id: 3, latitude: null, longitude: null }
+  ];
+  let edited;
+  maps.initDashboardMap(properties, property => { edited = property.id; });
+  assert.equal(markers.length, 2);
+  assert.deepEqual(Array.from(markers[0].coordinates), [0, 0]);
+  assert.equal(map.bounds.length, 2);
+  assert.equal(map.boundsOptions.maxZoom, 15);
+  assert.equal(markers[0].options.icon.html, '1');
+  assert.equal(markers[0].popup.children[0].textContent, properties[0].title);
+  assert.equal('innerHTML' in markers[0].popup.children[0], false);
+  markers[0].popup.children[2].onclick();
+  assert.equal(edited, 1);
+  assert.match(maps.dashboardMapSection(properties), /2 of 3 listings/);
+  maps.destroyMap();
+  assert.equal(map.removed, true);
+});
+
+test('an unpinned dashboard shows a default area without inventing property markers', () => {
+  const { maps, map, markers } = dashboardMapFixture();
+  maps.initDashboardMap([{ latitude: null, longitude: null }], () => {});
+  assert.equal(markers.length, 0);
+  assert.deepEqual(Array.from(map.centre), [18.5204, 73.8567]);
+  assert.equal(map.zoom, 11);
+  assert.equal(map.bounds, undefined);
+});

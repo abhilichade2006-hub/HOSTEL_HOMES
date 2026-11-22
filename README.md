@@ -39,6 +39,7 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Users save/unsave favourites, view owner contact details, call/email owners directly and send enquiries to the listing owner’s dashboard. Only the relevant owner can update an enquiry’s status.
 - Owners and admins can optionally pin a property's location on an OpenStreetMap map. Saved pins appear in room details; unpinned rooms link to the locality instead. No map API key is required.
 - In Add/Edit property, the **Property location (optional)** map is always visible directly below City and Locality. Click the map or use **Use map centre**, then save. Existing rooms need an owner-selected pin before room details display an embedded map.
+- Owner and Admin dashboards include a separate **Property map** above their listing controls. Owners see their listings; admins see all listings. Numbered saved pins show listing details and an **Edit listing** action. Listings without saved pins are counted but receive no invented markers; the empty map starts around Pune until locations are added.
 - Private in-app alerts: admins receive listing review requests, owners receive enquiries and listing decisions, and students receive enquiry status updates. The Alerts button shows unread updates and supports marking them as read.
 - Optional transactional email alerts through Brevo's HTTPS API, with a local SQLite outbox and retries.
 - Data stored in SQLite database file, shared by app sessions on this computer.

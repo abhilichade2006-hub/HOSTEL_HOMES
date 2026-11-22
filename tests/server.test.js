@@ -40,7 +40,7 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     const homepage = await (await fetch(base + '/')).text();
     for (const asset of ['app.css', 'maps.js', 'browse.js', 'app.js']) {
-      const version = ['app.css', 'app.js'].includes(asset) ? 'sharp-white-1' : 'room-tools-1';
+      const version = asset === 'browse.js' ? 'room-tools-1' : 'dashboard-map-1';
       assert.ok(homepage.includes(`${asset}?v=${version}`));
       assert.equal((await fetch(`${base}/${asset}?v=${version}`)).status, 200);
     }
