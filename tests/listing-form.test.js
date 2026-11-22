@@ -27,6 +27,9 @@ for (const role of ['Owner', 'Admin']) {
       assert.ok(html.indexOf('name="locality"') < html.indexOf('id="locationPicker"'));
       assert.ok(html.indexOf('id="locationPicker"') < html.indexOf('name="facilities"'));
       assert.match(html, /id="pinMap"/);
+      const acceptedPhotos = html.match(/name="image_file"[^>]*accept="([^"]+)"/)[1].split(',');
+      assert.ok(acceptedPhotos.includes('.jpg'));
+      assert.ok(acceptedPhotos.includes('.jpeg'));
       if (editing) {
         assert.match(html, /id="pinLatitude" value="0"/);
         assert.match(html, /id="pinLongitude" value="73\.8"/);

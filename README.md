@@ -32,7 +32,7 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - Search/filter/sort approved property listings.
 - Owners create and edit listings, view enquiries and delete their own listings; owner edits return listings to Pending approval.
 - Admins list their own properties or assign listings to registered owners, review and publish/reject listings, manage availability and see overview counts. Admins receive and manage enquiries only for properties they own.
-- Room galleries support up to six uploaded photos or image URLs, with optional photo labels.
+- Room galleries support up to six uploaded JPG/JPEG, PNG or WebP photos or image URLs, with optional photo labels. Both `.jpg` and `.jpeg` are explicitly selectable; JPEG files with an empty or legacy browser MIME type are saved as standard `image/jpeg`. The upload limit is 1.4 MB per file.
 - Select up to three rooms and compare rent, deposit, first-month costs, location, preference, availability and amenities. Selections stay available while filtering, and the comparison refreshes listing details before opening. Selections reset when the page reloads.
 - Room details show first month's rent plus deposit as a move-in estimate. Other charges must be confirmed with the owner.
 - Share a direct room link with friends or family using **Share room**. A shared `/?room=123` link opens the public room details. Copying supports manual selection if clipboard access is unavailable.
