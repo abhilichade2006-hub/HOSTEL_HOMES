@@ -1,10 +1,10 @@
 # Hostel Homes — Full-stack working prototype
 
-A real local backend (Express + SQLite), password-hashed accounts, JWT login, server-enforced roles, property listings, admin approval, favourites and booking enquiries. The SQLite database is stored in `hostel-homes.sqlite` and persists between restarts.
+A full-stack Express app with password-hashed accounts, JWT login, server-enforced roles, property listings, admin approval, favourites and booking enquiries. Set `DATABASE_URL` to use Neon PostgreSQL for persistent online storage. Without it, local development uses `hostel-homes.sqlite`.
 
 ## Start on Windows
 
-1. Install **Node.js 22.13 or newer** from https://nodejs.org/ (keep the default options).
+1. Install **Node.js 22.16 or newer** from https://nodejs.org/ (keep the default options).
 2. Extract this ZIP to a normal folder, e.g. `Desktop\hostel-homes-fullstack`.
 3. Open that folder in File Explorer. Click the address bar, type `cmd`, press Enter.
 4. Run these commands one at a time:
@@ -14,7 +14,7 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
    notepad .env
    ```
 
-5. In `.env`, change `JWT_SECRET` to a long random string and change `ADMIN_PASSWORD` to a strong password you will remember. Save and close Notepad. The initial admin account is created on the first server start if the configured email does not already exist.
+5. In `.env`, change `JWT_SECRET` to a long random string and change `ADMIN_PASSWORD` to a strong password you will remember. For Neon, add its PostgreSQL connection string as `DATABASE_URL`; leave it empty for local SQLite. Save and close Notepad. The initial admin account is created on the first server start if the configured email does not already exist.
 6. In the same Command Prompt run:
 
    ```bat
@@ -41,27 +41,44 @@ A real local backend (Express + SQLite), password-hashed accounts, JWT login, se
 - In Add/Edit property, the **Property location (optional)** map is always visible directly below City and Locality. Click the map or use **Use map centre**, then save. Existing rooms need an owner-selected pin before room details display an embedded map.
 - Owner and Admin dashboards include a separate **Property map** above their listing controls. Owners see their listings; admins see all listings. Numbered saved pins show listing details and an **Edit listing** action. Listings without saved pins are counted but receive no invented markers; the empty map starts around Pune until locations are added.
 - Private in-app alerts: admins receive listing review requests, owners receive enquiries and listing decisions, and students receive enquiry status updates. The Alerts button shows unread updates and supports marking them as read.
-- Optional transactional email alerts through Brevo's HTTPS API, with a local SQLite outbox and retries.
-- Data stored in SQLite database file, shared by app sessions on this computer.
+- Optional transactional email alerts through Brevo's HTTPS API, with a database-backed outbox and retries.
+- Data stored in PostgreSQL when `DATABASE_URL` is configured, or SQLite for local development.
 - Responsive white interface with square cards and controls, crisp borders, readable sans-serif type, and green accents across browsing, login and account workspaces.
 
 ## Important notes
 
 - The deployed site is https://hostel-homes.onrender.com/. Local changes reach it only after pushing to the branch Render deploys and deploying that commit.
-- No payments, identity verification, SMS notifications or radius search are included. Photo uploads, map pins and notifications are stored in SQLite.
-- Render Free loses local SQLite files on restarts, redeploys and idle shutdowns. A persistent database or a paid service with a persistent disk covering the database location is required to retain app data online. See [Render's storage limits](https://render.com/docs/free#local-files-lost-on-redeploy).
+- No payments, identity verification, SMS notifications or radius search are included. Photo uploads, map pins and notifications use the configured database. Uploaded photos are currently stored as data URLs and count toward database storage.
+- Render Free loses local SQLite files on restarts, redeploys and idle shutdowns. Use Neon via `DATABASE_URL` to retain data independently of the web service. Production/Render startup refuses a missing database URL, and a failed PostgreSQL connection never falls back to SQLite. See [Render's storage limits](https://render.com/docs/free#local-files-lost-on-redeploy).
 - Keep `.env` private. Do not publish the admin password or JWT secret.
 - If the database is first created before changing `.env`, the admin account is only auto-created if absent. If you need to reset local data, stop the server and back up/delete `hostel-homes.sqlite` (this deletes local app data).
-- SQLite is suitable for a small deployment. For a public multi-user production deployment, use a managed database, HTTPS, backups, rate limiting, and a proper hosting setup.
+- Keep database backups. Moving to Neon cannot recover data already lost from Render's temporary filesystem.
+
+## Connect Neon and deploy on Render
+
+1. In Neon, create a PostgreSQL project, click **Connect**, leave **Connection pooling** enabled and copy the `postgresql://...` URL.
+2. Add `DATABASE_URL=your-full-connection-string` to your private local `.env`. Do not commit it. The backend verifies TLS certificates for Neon's connection string.
+3. Run `npm install`. If preserving an existing SQLite database, migrate it **before the first PostgreSQL server start**:
+
+   ```bat
+   npm run db:migrate
+   ```
+
+   Or use `npm run db:migrate -- "C:\path\to\hostel-homes.sqlite"`. The command takes a consistent SQLite snapshot under the ignored `.backend-check/migration-backups/` folder, keeps the source unchanged, and imports accounts/password hashes, rooms/photos/map pins, favourites, enquiries and notifications in one transaction. It refuses a destination that already contains app records, so rerunning it cannot overwrite existing data. A fresh project without existing data can skip this import.
+4. Run `npm run test:postgres` to check real PostgreSQL flows using disposable, uniquely named test schemas. Tests never modify the public app tables or send emails. Then run `npm start` locally and check `/api/health`: `database` should be `PostgreSQL`.
+5. Add the same **DATABASE_URL** under the Render service's **Environment** settings. Keep `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` and optional Brevo settings configured there too; Render does not receive your local `.env` from GitHub.
+6. Merge the backend change into the branch Render deploys, then deploy. Existing site data that only lives on Render must be exported **before** redeployment and imported into an empty PostgreSQL database; a local SQLite snapshot only contains the records saved locally.
+
+Starting the server creates or upgrades the app tables without clearing records. The initial admin is inserted only if its email is absent; an existing account's password and role are preserved. Neon owns the saved data, so future Render restarts and deploys do not reset listings. Monitor your Neon plan's storage and compute limits as usage grows.
 
 
 ## Node.js 26 compatibility
 
-This package uses Node.js built-in `node:sqlite` instead of `better-sqlite3`, so `npm install` does not need to compile a native SQLite addon. Use Node.js 22.13+ (including Node.js 26).
+This package uses `pg` for PostgreSQL and Node.js built-in `node:sqlite` for local development/imports, so `npm install` does not need to compile a native SQLite addon. Use Node.js 22.16+ (including Node.js 26).
 
 ## Verify the local backend
 
-Run `npm test`. The integration test starts a separate server with a temporary SQLite database and checks authentication, permissions, room publishing, photos, removed rating routes, map coordinates, favourites, enquiries and private notifications, then restarts the server to verify persistence. Room tools, listing forms, map picker and email queue tests run separately; email API responses are mocked. Tests do not modify your normal database or send real emails.
+Run `npm test` for offline checks against temporary SQLite databases. Run `npm run test:postgres` with `DATABASE_URL` in `.env` to run the same account, listing, approval, search, gallery, map, favourite, enquiry, notification and restart checks against real PostgreSQL as well. PostgreSQL tests create and remove only their own `hh_test_...` schemas using a direct connection. Import checks cover existing IDs, password hashes, photos, sequences, repeat-import refusal and rollback on invalid data. Email API responses are mocked; tests do not send real emails.
 
 Use `http://localhost:3000` for the site and `http://localhost:3000/login` for login. Both pages call the same server's `/api` routes, so no separate frontend server or API URL is needed. The health check is `http://localhost:3000/api/health`.
 
