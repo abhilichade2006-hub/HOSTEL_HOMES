@@ -50,6 +50,7 @@ if (adminEmail && adminPassword && !db.prepare('SELECT id FROM users WHERE email
 app.use(helmet({contentSecurityPolicy:false,referrerPolicy:{policy:'strict-origin-when-cross-origin'}}));
 app.use(express.json({limit:'13mb'}));
 app.use('/vendor/leaflet',express.static(path.join(path.dirname(require.resolve('leaflet/package.json')),'dist')));
+app.use('/assets',express.static(path.join(__dirname,'assets')));
 for (const file of ['app.js','app.css','login.js','maps.js','browse.js']) app.get('/'+file,(req,res)=>res.sendFile(path.join(__dirname,file)));
 const safeUser = u => ({id:u.id,name:u.name,email:u.email,role:u.role});
 function auth(req,res,next){

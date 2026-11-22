@@ -18,6 +18,7 @@ async function freePort() {
 test('account, listing, approval and enquiry flows', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hostel-homes-test-'));
   for (const file of ['server.js', 'index.html', 'app.js', 'app.css', 'login.html', 'login.js', 'maps.js', 'email.js', 'browse.js']) fs.copyFileSync(path.join(__dirname, '..', file), path.join(dir, file));
+  fs.cpSync(path.join(__dirname, '..', 'assets'), path.join(dir, 'assets'), { recursive: true });
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   let child;
@@ -40,10 +41,15 @@ test('account, listing, approval and enquiry flows', async () => {
     assert.match(await (await fetch(base + '/')).text(), /Hostel Homes/);
     const homepage = await (await fetch(base + '/')).text();
     for (const asset of ['app.css', 'maps.js', 'browse.js', 'app.js']) {
-      const version = asset === 'app.js' ? 'jpeg-upload-1' : asset === 'browse.js' ? 'room-tools-1' : 'dashboard-map-1';
+      const version = asset === 'app.css' ? 'hero-photo-1' : asset === 'app.js' ? 'jpeg-upload-1' : asset === 'browse.js' ? 'room-tools-1' : 'dashboard-map-1';
       assert.ok(homepage.includes(`${asset}?v=${version}`));
       assert.equal((await fetch(`${base}/${asset}?v=${version}`)).status, 200);
     }
+    assert.ok(homepage.includes('src="/assets/student-room-hero-v1.jpg"'));
+    const heroImage = await fetch(base + '/assets/student-room-hero-v1.jpg');
+    assert.equal(heroImage.status, 200);
+    assert.match(heroImage.headers.get('content-type'), /^image\/jpeg/);
+    assert.deepEqual(Buffer.from(await heroImage.arrayBuffer()), fs.readFileSync(path.join(dir, 'assets', 'student-room-hero-v1.jpg')));
     assert.equal((await fetch(base + '/app.js')).status, 200);
     assert.equal((await fetch(base + '/maps.js')).status, 200);
     assert.equal((await fetch(base + '/vendor/leaflet/leaflet.js')).status, 200);

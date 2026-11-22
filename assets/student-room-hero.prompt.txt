@@ -1,0 +1,12 @@
+Generated with the built-in imagegen tool, then encoded as JPEG at quality 85 for web delivery.
+This is an inspirational homepage image, not a photo of a listed property.
+
+Use case: photorealistic-natural
+Asset type: homepage hero photograph for Hostel Homes, a student accommodation website with a clean white and forest-green interface.
+Primary request: a beautiful, welcoming, attainable student bedroom with a neatly made bed, a simple oak study desk and chair, books, and a small leafy plant.
+Scene/backdrop: bright compact room, white walls, large window with sheer curtains, understated sage-green bedding, natural oak furniture.
+Style/medium: high-quality interior editorial photography, realistic materials and believable furniture proportions.
+Composition/framing: landscape 3:2 photograph, eye-level view from a room corner, bed and study area both visible; balanced composition that also crops cleanly to a wide horizontal website panel.
+Lighting/mood: soft natural morning light and gentle shadows, fresh, calm and comfortable.
+Color palette: white, warm natural wood and muted greens, matching a clean green-and-white website.
+Constraints: no people, no text, no watermark, no logos, no purple, no orange or blue accents; avoid luxury-hotel styling and illustration or 3D-render appearance.
